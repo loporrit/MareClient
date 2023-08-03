@@ -1,0 +1,13 @@
+{
+  "Author": "Huggingway",
+  "Name": "Loporrit Sync",
+  "Punchline": "Let others see you as you see yourself.",
+  "Description": "This plugin will synchronize your Penumbra mods and current Glamourer state with other paired clients automatically.",
+  "InternalName": "LoporritSync",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "customization"
+  ],
+  "IconUrl": "https://raw.githubusercontent.com/loporrit/MareClient/main/MareSynchronos/images/logo.png",
+  "RepoUrl": "https://github.com/loporrit/MareClient/"
+}
