@@ -297,12 +297,12 @@ public class DrawGroupPair : DrawPairBase
                     ImGui.CloseCurrentPopup();
                 }
                 UiSharedService.AttachToolTip("Opens the profile for this user in a new window");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Profile"))
                 {
                     ImGui.CloseCurrentPopup();
                     _showModalReport = true;
                 }
-                UiSharedService.AttachToolTip("Report this users Mare Profile to the administrative team");
+                UiSharedService.AttachToolTip("Report this users Profile to the administrative team");
             }
             ImGui.EndPopup();
         }

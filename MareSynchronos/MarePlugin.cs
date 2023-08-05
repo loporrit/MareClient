@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace MareSynchronos;
+namespace LoporritSync;
 
 #pragma warning disable S125 // Sections of code should not be commented out
 /*
@@ -88,7 +88,7 @@ public class MarePlugin : MediatorSubscriberBase, IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version!;
-        Logger.LogInformation("Launching {name} {major}.{minor}.{build}", "Mare Synchronos", version.Major, version.Minor, version.Build);
+        Logger.LogInformation("Launching {name} {major}.{minor}.{build}-lop{rev}", "Loporrit Sync", version.Major, version.Minor, version.Build, version.Revision);
 
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (_) => Task.Run(WaitForPlayerAndLaunchCharacterManager));
         Mediator.Subscribe<DalamudLoginMessage>(this, (_) => DalamudUtilOnLogIn());

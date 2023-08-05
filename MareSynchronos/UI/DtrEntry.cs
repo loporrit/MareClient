@@ -25,7 +25,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
     {
         _logger = logger;
         _dtrBar = dtrBar;
-        _entry = new(() => _dtrBar.Get("Mare Synchronos"));
+        _entry = new(() => _dtrBar.Get("Loporrit"));
         _configService = configService;
         _pairManager = pairManager;
         _apiController = apiController;
@@ -72,7 +72,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
         _entry.Value.Shown = false;
         _entry.Value.Text = null;
         _entry.Value.Dispose();
-        _entry = new(() => _dtrBar.Get("Mare Synchronos"));
+        _entry = new(() => _dtrBar.Get("Loporrit"));
     }
 
     private async Task RunAsync()

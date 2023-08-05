@@ -26,19 +26,19 @@ public class NotificationService : DisposableMediatorSubscriberBase
 
     private void PrintErrorChat(string? message)
     {
-        SeStringBuilder se = new SeStringBuilder().AddText("[Mare Synchronos] Error: " + message);
+        SeStringBuilder se = new SeStringBuilder().AddText("[LoporritSync] Error: " + message);
         _chatGui.PrintError(se.BuiltString);
     }
 
     private void PrintInfoChat(string? message)
     {
-        SeStringBuilder se = new SeStringBuilder().AddText("[Mare Synchronos] Info: ").AddItalics(message ?? string.Empty);
+        SeStringBuilder se = new SeStringBuilder().AddText("[LoporritSync] Info: ").AddItalics(message ?? string.Empty);
         _chatGui.Print(se.BuiltString);
     }
 
     private void PrintWarnChat(string? message)
     {
-        SeStringBuilder se = new SeStringBuilder().AddText("[Mare Synchronos] ").AddUiForeground("Warning: " + (message ?? string.Empty), 31).AddUiForegroundOff();
+        SeStringBuilder se = new SeStringBuilder().AddText("[LoporritSync] ").AddUiForeground("Warning: " + (message ?? string.Empty), 31).AddUiForegroundOff();
         _chatGui.Print(se.BuiltString);
     }
 
@@ -108,6 +108,6 @@ public class NotificationService : DisposableMediatorSubscriberBase
 
     private void ShowToast(NotificationMessage msg)
     {
-        _uiBuilder.AddNotification(msg.Message ?? string.Empty, "[Mare Synchronos] " + msg.Title, msg.Type, msg.TimeShownOnScreen);
+        _uiBuilder.AddNotification(msg.Message ?? string.Empty, "[LoporritSync] " + msg.Title, msg.Type, msg.TimeShownOnScreen);
     }
 }

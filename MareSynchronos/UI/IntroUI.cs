@@ -29,7 +29,7 @@ public class IntroUi : WindowMediatorSubscriberBase
     private string[]? _tosParagraphs;
 
     public IntroUi(ILogger<IntroUi> logger, UiSharedService uiShared, MareConfigService configService,
-        PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, "Mare Synchronos Setup")
+        PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, "Loporrit Setup")
     {
         _uiShared = uiShared;
         _configService = configService;
@@ -61,10 +61,10 @@ public class IntroUi : WindowMediatorSubscriberBase
         if (!_configService.Current.AcceptedAgreement && !_readFirstPage)
         {
             if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
-            ImGui.TextUnformatted("Welcome to Mare Synchronos");
+            ImGui.TextUnformatted("Welcome to Loporrit");
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
             ImGui.Separator();
-            UiSharedService.TextWrapped("Mare Synchronos is a plugin that will replicate your full current character state including all Penumbra mods to other paired Mare Synchronos users. " +
+            UiSharedService.TextWrapped("Loporrit is a plugin that will replicate your full current character state including all Penumbra mods to other paired users. " +
                               "Note that you will have to have Penumbra as well as Glamourer installed to use this plugin.");
             UiSharedService.TextWrapped("We will have to setup a few things first before you can start using this plugin. Click on next to continue.");
 
@@ -78,7 +78,7 @@ public class IntroUi : WindowMediatorSubscriberBase
                 _readFirstPage = true;
                 _timeoutTask = Task.Run(async () =>
                 {
-                    for (int i = 60; i > 0; i--)
+                    for (int i = 10; i > 0; i--)
                     {
                         _timeoutLabel = $"{Strings.ToS.ButtonWillBeAvailableIn} {i}s";
                         await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
@@ -153,11 +153,11 @@ public class IntroUi : WindowMediatorSubscriberBase
             }
             else
             {
-                UiSharedService.TextWrapped("To not unnecessary download files already present on your computer, Mare Synchronos will have to scan your Penumbra mod directory. " +
-                                     "Additionally, a local storage folder must be set where Mare Synchronos will download other character files to. " +
+                UiSharedService.TextWrapped("To not unnecessary download files already present on your computer, Loporrit will have to scan your Penumbra mod directory. " +
+                                     "Additionally, a local storage folder must be set where Loporrit will download other character files to. " +
                                      "Once the storage folder is set and the scan complete, this page will automatically forward to registration at a service.");
                 UiSharedService.TextWrapped("Note: The initial scan, depending on the amount of mods you have, might take a while. Please wait until it is completed.");
-                UiSharedService.ColorTextWrapped("Warning: once past this step you should not delete the FileCache.csv of Mare Synchronos in the Plugin Configurations folder of Dalamud. " +
+                UiSharedService.ColorTextWrapped("Warning: once past this step you should not delete the FileCache.csv of Loporrit in the Plugin Configurations folder of Dalamud. " +
                                           "Otherwise on the next launch a full re-scan of the file cache database will be initiated.", ImGuiColors.DalamudYellow);
                 UiSharedService.ColorTextWrapped("Warning: if the scan is hanging and does nothing for a long time, chances are high your Penumbra folder is not set up properly.", ImGuiColors.DalamudYellow);
                 _uiShared.DrawCacheDirectorySetting();
@@ -192,7 +192,7 @@ public class IntroUi : WindowMediatorSubscriberBase
             ImGui.TextUnformatted("Service Registration");
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
             ImGui.Separator();
-            UiSharedService.TextWrapped("To be able to use Mare Synchronos you will have to register an account.");
+            UiSharedService.TextWrapped("To be able to use Loporrit you will have to register an account.");
             UiSharedService.TextWrapped("For the official Mare Synchronos Servers the account creation will be handled on the official Mare Synchronos Discord. Due to security risks for the server, there is no way to handle this senisibly otherwise.");
             UiSharedService.TextWrapped("If you want to register at the main server \"" + WebAPI.ApiController.MainServer + "\" join the Discord and follow the instructions as described in #mare-commands.");
 

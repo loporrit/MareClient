@@ -10,7 +10,8 @@ namespace MareSynchronos.Services;
 
 public sealed class CommandManagerService : IDisposable
 {
-    private const string _commandName = "/mare";
+    private const string _commandName = "/sync";
+    private const string _commandName2 = "/loporrit";
 
     private readonly ApiController _apiController;
     private readonly ICommandManager _commandManager;
@@ -33,13 +34,18 @@ public sealed class CommandManagerService : IDisposable
         _mediator = mediator;
         _commandManager.AddHandler(_commandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Opens the Mare Synchronos UI"
+            HelpMessage = "Opens the Loporrit UI"
+        });
+        _commandManager.AddHandler(_commandName2, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "Opens the Loporrit UI"
         });
     }
 
     public void Dispose()
     {
         _commandManager.RemoveHandler(_commandName);
+        _commandManager.RemoveHandler(_commandName2);
     }
 
     private void OnCommand(string command, string args)
@@ -57,7 +63,7 @@ public sealed class CommandManagerService : IDisposable
         {
             if (_apiController.ServerState == WebAPI.SignalR.Utils.ServerState.Disconnecting)
             {
-                _mediator.Publish(new NotificationMessage("Mare disconnecting", "Cannot use /toggle while Mare Synchronos is still disconnecting",
+                _mediator.Publish(new NotificationMessage("Loporrit disconnecting", "Cannot use /toggle while Loporrit is still disconnecting",
                     Dalamud.Interface.Internal.Notifications.NotificationType.Error));
             }
 
