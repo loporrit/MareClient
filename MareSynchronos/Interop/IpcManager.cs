@@ -477,7 +477,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         return await _dalamudUtil.RunOnFrameworkThread(() =>
         {
-            var collName = "Mare_" + uid;
+            var collName = "Loporrit_" + uid;
             var retCreate = _penumbraCreateNamedTemporaryCollection.Invoke(collName);
             logger.LogTrace("Creating Temp Collection {collName}, Success: {ret}", collName, retCreate);
             return collName;

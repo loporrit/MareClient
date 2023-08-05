@@ -50,12 +50,12 @@ public abstract class DrawPairBase
 
         if (ImGui.BeginPopupModal("Report Profile", ref _showModalReport, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("Report " + (_pair.UserData.AliasOrUID) + " Mare Profile");
+            UiSharedService.TextWrapped("Report " + (_pair.UserData.AliasOrUID) + " Profile");
             ImGui.InputTextMultiline("##reportReason", ref _reportReason, 500, new System.Numerics.Vector2(500 - ImGui.GetStyle().ItemSpacing.X * 2, 200));
             UiSharedService.TextWrapped($"Note: Sending a report will disable the offending profile globally.{Environment.NewLine}" +
-                $"The report will be sent to the team of your currently connected Mare Synchronos Service.{Environment.NewLine}" +
+                $"The report will be sent to the team of your currently connected server.{Environment.NewLine}" +
                 $"The report will include your user and your contact info (Discord User).{Environment.NewLine}" +
-                $"Depending on the severity of the offense the users Mare profile or account can be permanently disabled or banned.");
+                $"Depending on the severity of the offense the users profile or account can be permanently disabled or banned.");
             UiSharedService.ColorTextWrapped("Report spam and wrong reports will not be tolerated and can lead to permanent account suspension.", ImGuiColors.DalamudRed);
             if (string.IsNullOrEmpty(_reportReason)) ImGui.BeginDisabled();
             if (ImGui.Button("Send Report"))

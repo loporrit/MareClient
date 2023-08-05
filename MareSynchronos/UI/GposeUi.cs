@@ -18,7 +18,7 @@ public class GposeUi : WindowMediatorSubscriberBase
 
     public GposeUi(ILogger<GposeUi> logger, MareCharaFileManager mareCharaFileManager,
         DalamudUtilService dalamudUtil, FileDialogManager fileDialogManager, MareConfigService configService,
-        MareMediator mediator) : base(logger, mediator, "Mare Synchronos Gpose Import UI###MareSynchronosGposeUI")
+        MareMediator mediator) : base(logger, mediator, "Loporrit Gpose Import UI###LoporritSyncGposeUI")
     {
         _mareCharaFileManager = mareCharaFileManager;
         _dalamudUtil = dalamudUtil;

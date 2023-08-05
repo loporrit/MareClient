@@ -55,18 +55,18 @@ public class Pair
 
         if (!IsPaused)
         {
-            args.AddCustomItem(new GameObjectContextMenuItem("[Mare] Open Profile", (a) =>
+            args.AddCustomItem(new GameObjectContextMenuItem("[Loporrit] Open Profile", (a) =>
             {
                 _mediator.Publish(new ProfileOpenStandaloneMessage(this));
             }));
         }
-        args.AddCustomItem(new GameObjectContextMenuItem("[Mare] Reapply last data", (a) =>
+        args.AddCustomItem(new GameObjectContextMenuItem("[Loporrit] Reapply last data", (a) =>
         {
             ApplyLastReceivedData(true);
         }, false));
         if (UserPair != null && UserPair.OtherPermissions.IsPaired() && UserPair.OwnPermissions.IsPaired())
         {
-            args.AddCustomItem(new GameObjectContextMenuItem("[Mare] Cycle pause state", (a) =>
+            args.AddCustomItem(new GameObjectContextMenuItem("[Loporrit] Cycle pause state", (a) =>
             {
                 _mediator.Publish(new CyclePauseMessage(UserData));
             }, false));

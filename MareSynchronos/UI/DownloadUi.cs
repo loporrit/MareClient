@@ -22,7 +22,7 @@ public class DownloadUi : WindowMediatorSubscriberBase
     private readonly ConcurrentDictionary<GameObjectHandler, bool> _uploadingPlayers = new();
 
     public DownloadUi(ILogger<DownloadUi> logger, DalamudUtilService dalamudUtilService, MareConfigService configService,
-        FileUploadManager fileTransferManager, MareMediator mediator, UiSharedService uiShared) : base(logger, mediator, "Mare Synchronos Downloads")
+        FileUploadManager fileTransferManager, MareMediator mediator, UiSharedService uiShared) : base(logger, mediator, "Loporrit Downloads")
     {
         _dalamudUtilService = dalamudUtilService;
         _configService = configService;

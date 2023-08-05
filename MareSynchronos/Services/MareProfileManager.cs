@@ -2,6 +2,7 @@
 using MareSynchronos.API.Data.Comparer;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -24,6 +25,7 @@ public class MareProfileManager : MediatorSubscriberBase
     private const string _nsfw = "Profile not displayed - NSFW";
     private readonly ApiController _apiController;
     private readonly MareConfigService _mareConfigService;
+    private readonly ServerConfigurationManager _serverConfigurationManager;
     private readonly ConcurrentDictionary<UserData, MareProfileData> _mareProfiles = new(UserDataComparer.Instance);
 
     private readonly MareProfileData DefaultProfileData = new(false, false, _mareLogo, string.Empty, _noDescription);
@@ -31,10 +33,11 @@ public class MareProfileManager : MediatorSubscriberBase
     private readonly MareProfileData NsfwProfileData = new(false, false, _mareLogoNsfw, string.Empty, _nsfw);
 
     public MareProfileManager(ILogger<MareProfileManager> logger, MareConfigService mareConfigService,
-        MareMediator mediator, ApiController apiController) : base(logger, mediator)
+        MareMediator mediator, ApiController apiController, ServerConfigurationManager serverConfigurationManager) : base(logger, mediator)
     {
         _mareConfigService = mareConfigService;
         _apiController = apiController;
+        _serverConfigurationManager = serverConfigurationManager;
 
         Mediator.Subscribe<ClearProfileDataMessage>(this, (msg) =>
         {
@@ -63,9 +66,12 @@ public class MareProfileManager : MediatorSubscriberBase
         {
             _mareProfiles[data] = LoadingProfileData;
             var profile = await _apiController.UserGetProfile(new API.Dto.User.UserDto(data)).ConfigureAwait(false);
+            bool isSupporter = !string.Equals(data.Alias, data.UID, StringComparison.Ordinal);
+            if (_serverConfigurationManager.CurrentApiUrl != ApiController.MainServiceUri)
+                isSupporter = false;
             MareProfileData profileData = new(profile.Disabled, profile.IsNSFW ?? false,
                 string.IsNullOrEmpty(profile.ProfilePictureBase64) ? _mareLogo : profile.ProfilePictureBase64,
-                !string.IsNullOrEmpty(data.Alias) && !string.Equals(data.Alias, data.UID, StringComparison.Ordinal) ? _mareSupporter : string.Empty,
+                !string.IsNullOrEmpty(data.Alias) && isSupporter ? _mareSupporter : string.Empty,
                 string.IsNullOrEmpty(profile.Description) ? _noDescription : profile.Description);
             if (profileData.IsNSFW && !_mareConfigService.Current.ProfilesAllowNsfw && !string.Equals(_apiController.UID, data.UID, StringComparison.Ordinal))
             {
