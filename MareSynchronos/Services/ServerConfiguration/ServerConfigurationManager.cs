@@ -340,9 +340,19 @@ public class ServerConfigurationManager
 
     private void EnsureMainExists()
     {
-        if (_configService.Current.ServerStorage.Count == 0 || !string.Equals(_configService.Current.ServerStorage[0].ServerUri, ApiController.MainServiceUri, StringComparison.OrdinalIgnoreCase))
+        bool lopExists = false;
+        bool mainExists = false;
+        _configService.Current.ServerStorage.ForEach((x) => {
+            _logger.LogDebug(" server uri = {x.ServerUri}");
+            if (x.ServerUri.Equals(ApiController.LoporritServiceUri, StringComparison.OrdinalIgnoreCase))
+                lopExists = true;
+            else if (x.ServerUri.Equals(ApiController.MainServiceUri, StringComparison.OrdinalIgnoreCase))
+                mainExists = true;
+        });
+        if (!lopExists)
         {
-            _configService.Current.ServerStorage.Insert(0, new ServerStorage() { ServerUri = ApiController.MainServiceUri, ServerName = ApiController.MainServer });
+            _logger.LogDebug("Re-adding missing server {ApiController.LoporritServiceUri}");
+            _configService.Current.ServerStorage.Insert(0, new ServerStorage() { ServerUri = ApiController.LoporritServiceUri, ServerName = ApiController.LoporritServer });
         }
         Save();
     }

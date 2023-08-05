@@ -56,7 +56,7 @@ public class CompactUi : WindowMediatorSubscriberBase
     private bool _wasOpen;
 
     public CompactUi(ILogger<CompactUi> logger, UiSharedService uiShared, MareConfigService configService, ApiController apiController, PairManager pairManager,
-        ServerConfigurationManager serverManager, MareMediator mediator, FileUploadManager fileTransferManager, UidDisplayHandler uidDisplayHandler) : base(logger, mediator, "###MareSynchronosMainUI")
+        ServerConfigurationManager serverManager, MareMediator mediator, FileUploadManager fileTransferManager, UidDisplayHandler uidDisplayHandler) : base(logger, mediator, "###LoporritSyncMainUI")
     {
         _uiShared = uiShared;
         _configService = configService;
@@ -75,11 +75,11 @@ public class CompactUi : WindowMediatorSubscriberBase
 #if DEBUG
         string dev = "Dev Build";
         var ver = Assembly.GetExecutingAssembly().GetName().Version!;
-        WindowName = $"Mare Synchronos {dev} ({ver.Major}.{ver.Minor}.{ver.Build})###MareSynchronosMainUI";
+        WindowName = $"Loporrit Sync {dev} ({ver.Major}.{ver.Minor}.{ver.Build}-lop{ver.Revision})###LoporritSyncMainUI";
         Toggle();
 #else
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        WindowName = "Mare Synchronos " + ver.Major + "." + ver.Minor + "." + ver.Build + "###MareSynchronosMainUI";
+        WindowName = "Loporrit Sync " + ver.Major + "." + ver.Minor + "." + ver.Build + "-lop" + ver.Revision + "###LoporritSyncMainUI";
 #endif
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (_) => IsOpen = true);
         Mediator.Subscribe<SwitchToIntroUiMessage>(this, (_) => IsOpen = false);
@@ -99,6 +99,17 @@ public class CompactUi : WindowMediatorSubscriberBase
 
     public override void Draw()
     {
+        /*if (_apiController.ServerInfo.AccentColor.HasValue)
+        {
+            UiSharedService.AccentColor = _apiController.ServerInfo.AccentColor.Value;
+        }
+        else*/
+        {
+            if (_serverManager.CurrentApiUrl == ApiController.LoporritServiceUri)
+                UiSharedService.AccentColor = new Vector4(1.0f, 0.8666f, 0.06666f, 1.0f);
+            else
+                UiSharedService.AccentColor = ImGuiColors.ParsedGreen;
+        }
         WindowContentWidth = UiSharedService.GetWindowContentRegionWidth();
         if (!_apiController.IsCurrentVersion)
         {
@@ -109,8 +120,8 @@ public class CompactUi : WindowMediatorSubscriberBase
             ImGui.SetCursorPosX((ImGui.GetWindowContentRegionMax().X + ImGui.GetWindowContentRegionMin().X) / 2 - uidTextSize.X / 2);
             ImGui.TextColored(ImGuiColors.DalamudRed, unsupported);
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
-            UiSharedService.ColorTextWrapped($"Your Mare Synchronos installation is out of date, the current version is {ver.Major}.{ver.Minor}.{ver.Build}. " +
-                $"It is highly recommended to keep Mare Synchronos up to date. Open /xlplugins and update the plugin.", ImGuiColors.DalamudRed);
+            UiSharedService.ColorTextWrapped($"Your Loporrit installation is out of date, the current version is {ver.Major}.{ver.Minor}.{ver.Build}. " +
+                $"It is highly recommended to keep Loporrit up to date. Open /xlplugins and update the plugin.", ImGuiColors.DalamudRed);
         }
 
         UiSharedService.DrawWithID("header", DrawUIDHeader);
@@ -549,7 +560,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         {
             Mediator.Publish(new OpenSettingsUiMessage());
         }
-        UiSharedService.AttachToolTip("Open the Mare Synchronos Settings");
+        UiSharedService.AttachToolTip("Open the Loporrit Settings");
 
         ImGui.SameLine(); //Important to draw the uidText consistently
         ImGui.SetCursorPos(originalPos);
@@ -600,10 +611,10 @@ public class CompactUi : WindowMediatorSubscriberBase
         {
             ServerState.Connecting => "Attempting to connect to the server.",
             ServerState.Reconnecting => "Connection to server interrupted, attempting to reconnect to the server.",
-            ServerState.Disconnected => "You are currently disconnected from the Mare Synchronos server.",
+            ServerState.Disconnected => "You are currently disconnected from the sync server.",
             ServerState.Disconnecting => "Disconnecting from the server",
             ServerState.Unauthorized => "Server Response: " + _apiController.AuthFailureMessage,
-            ServerState.Offline => "Your selected Mare Synchronos server is currently offline.",
+            ServerState.Offline => "Your selected sync server is currently offline.",
             ServerState.VersionMisMatch =>
                 "Your plugin or the server you are connecting to is out of date. Please update your plugin now. If you already did so, contact the server provider to update their server to the latest version.",
             ServerState.RateLimited => "You are rate limited for (re)connecting too often. Disconnect, wait 10 minutes and try again.",
@@ -619,7 +630,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         {
             ServerState.Connecting => ImGuiColors.DalamudYellow,
             ServerState.Reconnecting => ImGuiColors.DalamudRed,
-            ServerState.Connected => ImGuiColors.ParsedGreen,
+            ServerState.Connected => UiSharedService.AccentColor,
             ServerState.Disconnected => ImGuiColors.DalamudYellow,
             ServerState.Disconnecting => ImGuiColors.DalamudYellow,
             ServerState.Unauthorized => ImGuiColors.DalamudRed,
