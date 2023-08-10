@@ -203,7 +203,7 @@ public sealed class PeriodicFileScanner : DisposableMediatorSubscriberBase
         if (string.IsNullOrEmpty(_configService.Current.CacheFolder) || !Directory.Exists(_configService.Current.CacheFolder))
         {
             cacheDirExists = false;
-            Logger.LogWarning("Mare Cache directory is not set or does not exist.");
+            Logger.LogWarning("Loporrit Cache directory is not set or does not exist.");
         }
         if (!penDirExists || !cacheDirExists)
         {

@@ -354,11 +354,6 @@ public class ServerConfigurationManager
             _logger.LogDebug("Re-adding missing server {ApiController.LoporritServiceUri}");
             _configService.Current.ServerStorage.Insert(0, new ServerStorage() { ServerUri = ApiController.LoporritServiceUri, ServerName = ApiController.LoporritServer });
         }
-        if (!mainExists)
-        {
-            _logger.LogDebug("Re-adding missing server {ApiController.MainServiceUri}");
-            _configService.Current.ServerStorage.Insert(1, new ServerStorage() { ServerUri = ApiController.MainServiceUri, ServerName = ApiController.MainServer });
-        }
         Save();
     }
 
