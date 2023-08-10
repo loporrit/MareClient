@@ -910,7 +910,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
             {
                 var serverName = selectedServer.ServerName;
                 var serverUri = selectedServer.ServerUri;
-                var isMain = string.Equals(serverName, ApiController.MainServer, StringComparison.OrdinalIgnoreCase);
+                var isMain = string.Equals(serverName, ApiController.LoporritServer, StringComparison.OrdinalIgnoreCase)
+                          || string.Equals(serverName, ApiController.MainServer, StringComparison.OrdinalIgnoreCase);
                 var flags = isMain ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None;
 
                 if (ImGui.InputText("Service URI", ref serverUri, 255, flags))
