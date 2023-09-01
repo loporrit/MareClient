@@ -605,7 +605,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         }
     }
 
-    public bool DrawOtherPluginState()
+    public bool DrawOtherPluginState(bool intro = false)
     {
         var penumbraColor = _penumbraExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
         var glamourerColor = _glamourerExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
@@ -613,6 +613,13 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         var customizeColor = _customizePlusExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
         var paletteColor = _palettePlusExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
         var honorificColor = _honorificExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
+
+        if (intro)
+        {
+            ImGui.SetWindowFontScale(0.8f);
+            BigText("Required Plugins");
+            ImGui.SetWindowFontScale(1.0f);
+        }
         ImGui.Text("Penumbra:");
         ImGui.SameLine();
         ImGui.TextColored(penumbraColor, _penumbraExists ? "Available" : "Unavailable");
@@ -620,8 +627,18 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.Text("Glamourer:");
         ImGui.SameLine();
         ImGui.TextColored(glamourerColor, _glamourerExists ? "Available" : "Unavailable");
-        ImGui.Text("Optional Addons");
-        ImGui.SameLine();
+        if (intro)
+        {
+            ImGui.SetWindowFontScale(0.8f);
+            BigText("Optional Addons");
+            ImGui.SetWindowFontScale(1.0f);
+            UiSharedService.TextWrapped("These addons are not required for basic operation, but without them you may not see others as intended.");
+        }
+        else
+        {
+            ImGui.SameLine();
+            ImGui.Text("Optional Addons");
+        }
         ImGui.Text("SimpleHeels:");
         ImGui.SameLine();
         ImGui.TextColored(heelsColor, _heelsExists ? "Available" : "Unavailable");
