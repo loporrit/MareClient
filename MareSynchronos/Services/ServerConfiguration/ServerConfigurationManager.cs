@@ -123,7 +123,7 @@ public class ServerConfigurationManager
 
     public bool HasValidConfig()
     {
-        return CurrentServer != null;
+        return CurrentServer != null && CurrentServer.SecretKeys.Any();
     }
 
     public void Save()
