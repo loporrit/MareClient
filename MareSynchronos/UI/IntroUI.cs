@@ -42,8 +42,8 @@ public class IntroUi : WindowMediatorSubscriberBase
 
         SizeConstraints = new WindowSizeConstraints()
         {
-            MinimumSize = new Vector2(600, 400),
-            MaximumSize = new Vector2(600, 2000),
+            MinimumSize = new Vector2(650, 400),
+            MaximumSize = new Vector2(650, 2000),
         };
 
         GetToSLocalization();
@@ -71,7 +71,7 @@ public class IntroUi : WindowMediatorSubscriberBase
             UiSharedService.ColorTextWrapped("Note: Any modifications you have applied through anything but Penumbra cannot be shared and your character state on other clients " +
                                  "might look broken because of this or others players mods might not apply on your end altogether. " +
                                  "If you want to use this plugin you will have to move your mods to Penumbra.", ImGuiColors.DalamudYellow);
-            if (!_uiShared.DrawOtherPluginState()) return;
+            if (!_uiShared.DrawOtherPluginState(true)) return;
             ImGui.Separator();
             if (ImGui.Button("Next##toAgreement"))
             {
@@ -193,15 +193,7 @@ public class IntroUi : WindowMediatorSubscriberBase
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
             ImGui.Separator();
             UiSharedService.TextWrapped("To be able to use Loporrit you will have to register an account.");
-            UiSharedService.TextWrapped("For the official Mare Synchronos Servers the account creation will be handled on the official Mare Synchronos Discord. Due to security risks for the server, there is no way to handle this senisibly otherwise.");
-            UiSharedService.TextWrapped("If you want to register at the main server \"" + WebAPI.ApiController.MainServer + "\" join the Discord and follow the instructions as described in #mare-commands.");
-
-            if (ImGui.Button("Join the Mare Synchronos Discord"))
-            {
-                Util.OpenLink("https://discord.gg/mpNdkrTRjW");
-            }
-
-            UiSharedService.TextWrapped("For all other non official services you will have to contact the appropriate service provider how to obtain a secret key.");
+            UiSharedService.TextWrapped("Refer to the instructions at the location you obtained this plugin for more information or support.");
 
             ImGui.Separator();
 

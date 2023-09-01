@@ -705,7 +705,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         }
     }
 
-    public bool DrawOtherPluginState()
+    public bool DrawOtherPluginState(bool intro = false)
     {
         var penumbraColor = _penumbraExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
         var glamourerColor = _glamourerExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
@@ -715,9 +715,19 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         var honorificColor = _honorificExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
         var check = FontAwesomeIcon.Check.ToIconString();
         var cross = FontAwesomeIcon.SquareXmark.ToIconString();
-        ImGui.TextUnformatted("Mandatory Plugins:");
 
-        ImGui.SameLine();
+        if (intro)
+        {
+            ImGui.SetWindowFontScale(0.8f);
+            BigText("Mandatory Plugins");
+            ImGui.SetWindowFontScale(1.0f);
+        }
+        else
+        {
+            ImGui.TextUnformatted("Mandatory Plugins:");
+            ImGui.SameLine();
+        }
+
         ImGui.TextUnformatted("Penumbra");
         ImGui.SameLine();
         FontText(_penumbraExists ? check : cross, UiBuilder.IconFont, penumbraColor);
@@ -733,8 +743,19 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         AttachToolTip($"Glamourer is " + (_glamourerExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
 
-        ImGui.TextUnformatted("Optional Plugins:");
-        ImGui.SameLine();
+        if (intro)
+        {
+            ImGui.SetWindowFontScale(0.8f);
+            BigText("Optional Addons");
+            ImGui.SetWindowFontScale(1.0f);
+            UiSharedService.TextWrapped("These addons are not required for basic operation, but without them you may not see others as intended.");
+        }
+        else
+        {
+            ImGui.TextUnformatted("Optional Addons:");
+            ImGui.SameLine();
+        }
+
         ImGui.TextUnformatted("SimpleHeels");
         ImGui.SameLine();
         FontText(_heelsExists ? check : cross, UiBuilder.IconFont, heelsColor);
