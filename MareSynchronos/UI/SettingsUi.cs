@@ -6,6 +6,8 @@ using Dalamud.Utility;
 using ImGuiNET;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Comparer;
+using MareSynchronos.API.Dto.Account;
+using MareSynchronos.API.Routes;
 using MareSynchronos.FileCache;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.MareConfiguration.Models;
@@ -24,6 +26,9 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Reflection;
 
 namespace MareSynchronos.UI;
 
@@ -55,6 +60,10 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private CancellationTokenSource? _validationCts;
     private (int, int, FileCacheEntity) _currentProgress;
     private Task? _exportTask;
+
+    private bool _registrationInProgress = false;
+    private bool _registrationSuccess = false;
+    private string? _registrationMessage;
 
     public SettingsUi(ILogger<SettingsUi> logger,
         UiSharedService uiShared, MareConfigService configService,
@@ -1054,6 +1063,67 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     _serverConfigurationManager.Save();
                 }
 
+                if (selectedServer.ServerUri == ApiController.LoporritServiceUri)
+                {
+                    ImGui.SameLine();
+                    if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Plus, "Register a new Loporrit account"))
+                    {
+                        _registrationInProgress = true;
+                        _ = Task.Run(async () => {
+                            try
+                            {
+                                using HttpClient httpClient = new();
+                                var ver = Assembly.GetExecutingAssembly().GetName().Version;
+                                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MareSynchronos", ver!.Major + "." + ver!.Minor + "." + ver!.Build));
+                                var postUri = MareAuth.AuthRegisterFullPath(new Uri(selectedServer.ServerUri
+                                    .Replace("wss://", "https://", StringComparison.OrdinalIgnoreCase)
+                                    .Replace("ws://", "http://", StringComparison.OrdinalIgnoreCase)));
+                                _logger.LogInformation("Registering new account: " + postUri.ToString());
+                                var result = await httpClient.PostAsync(postUri, null).ConfigureAwait(false);
+                                result.EnsureSuccessStatusCode();
+                                var reply = await result.Content.ReadFromJsonAsync<RegisterReplyDto>().ConfigureAwait(false) ?? new();
+                                if (!reply.Success)
+                                {
+                                    _logger.LogWarning("Registration failed: " + reply.ErrorMessage);
+                                    _registrationMessage = reply.ErrorMessage;
+                                    if (_registrationMessage.IsNullOrEmpty())
+                                        _registrationMessage = "An unknown error occured. Please try again later.";
+                                    return;
+                                }
+                                _registrationMessage = "New account registered.\nPlease keep a copy of your secret key in case you need to reset your plugins, or to use it on another PC.";
+                                _registrationSuccess = true;
+                                selectedServer.SecretKeys.Add(selectedServer.SecretKeys.Any() ? selectedServer.SecretKeys.Max(p => p.Key) + 1 : 0, new SecretKey()
+                                {
+                                    FriendlyName = reply.UID + $" (registered {DateTime.Now:yyyy-MM-dd})",
+                                    Key = reply.SecretKey ?? ""
+                                });
+                                _serverConfigurationManager.Save();
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "Registration failed");
+                                _registrationSuccess = false;
+                                _registrationMessage = "An unknown error occured. Please try again later.";
+                            }
+                            finally
+                            {
+                                _registrationInProgress = false;
+                            }
+                        });
+                    }
+                    if (_registrationInProgress)
+                    {
+                        ImGui.TextUnformatted("Sending request...");
+                    }
+                    else if (!_registrationMessage.IsNullOrEmpty())
+                    {
+                        if (!_registrationSuccess)
+                            ImGui.TextColored(ImGuiColors.DalamudYellow, _registrationMessage);
+                        else
+                            ImGui.TextUnformatted(_registrationMessage);
+                    }
+                }
+
                 ImGui.EndTabItem();
             }
 
@@ -1061,8 +1131,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             {
                 var serverName = selectedServer.ServerName;
                 var serverUri = selectedServer.ServerUri;
-                var isMain = string.Equals(serverName, ApiController.LoporritServer, StringComparison.OrdinalIgnoreCase)
-                          || string.Equals(serverName, ApiController.MainServer, StringComparison.OrdinalIgnoreCase);
+                var isMain = string.Equals(serverName, ApiController.LoporritServer, StringComparison.OrdinalIgnoreCase);
                 var flags = isMain ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None;
 
                 if (ImGui.InputText("Service URI", ref serverUri, 255, flags))
@@ -1137,8 +1206,10 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
             if (ImGui.BeginTabItem("Service Settings"))
             {
+                ImGui.BeginDisabled(_registrationInProgress);
                 DrawServerConfiguration();
                 ImGui.EndTabItem();
+                ImGui.EndDisabled(); // _registrationInProgress
             }
 
             if (ImGui.BeginTabItem("Debug"))

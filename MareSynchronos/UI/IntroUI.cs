@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Colors;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
 using ImGuiNET;
@@ -8,13 +9,20 @@ using MareSynchronos.MareConfiguration;
 using MareSynchronos.MareConfiguration.Models;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
+using MareSynchronos.WebAPI;
+using MareSynchronos.API.Dto.Account;
+using MareSynchronos.API.Routes;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Numerics;
+using System.Reflection;
 
 namespace MareSynchronos.UI;
 
 public class IntroUi : WindowMediatorSubscriberBase
 {
+    private readonly ApiController _apiController;
     private readonly MareConfigService _configService;
     private readonly PeriodicFileScanner _fileCacheManager;
     private readonly Dictionary<string, string> _languages = new(StringComparer.Ordinal) { { "English", "en" }, { "Deutsch", "de" }, { "Français", "fr" } };
@@ -27,12 +35,17 @@ public class IntroUi : WindowMediatorSubscriberBase
     private string _timeoutLabel = string.Empty;
     private Task? _timeoutTask;
     private string[]? _tosParagraphs;
+    private bool _registrationInProgress = false;
+    private bool _registrationSuccess = false;
+    private string? _registrationMessage;
+    private RegisterReplyDto? _registrationReply;
 
-    public IntroUi(ILogger<IntroUi> logger, UiSharedService uiShared, MareConfigService configService,
+    public IntroUi(ILogger<IntroUi> logger, UiSharedService uiShared, MareConfigService configService, ApiController apiController,
         PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, "Loporrit Setup")
     {
         _uiShared = uiShared;
         _configService = configService;
+        _apiController = apiController;
         _fileCacheManager = fileCacheManager;
         _serverConfigurationManager = serverConfigurationManager;
 
@@ -199,6 +212,7 @@ public class IntroUi : WindowMediatorSubscriberBase
 
             UiSharedService.TextWrapped("Once you have received a secret key you can connect to the service using the tools provided below.");
 
+            ImGui.BeginDisabled(_registrationInProgress);
             _ = _uiShared.DrawServiceSelection(selectOnChange: true);
 
             var text = "Enter Secret Key";
@@ -219,10 +233,15 @@ public class IntroUi : WindowMediatorSubscriberBase
                 ImGui.SameLine();
                 if (ImGui.Button(buttonText))
                 {
+                    string keyName;
                     if (_serverConfigurationManager.CurrentServer == null) _serverConfigurationManager.SelectServer(0);
+                    if (_registrationReply != null && _secretKey == _registrationReply.SecretKey)
+                        keyName = _registrationReply.UID + $" (registered {DateTime.Now:yyyy-MM-dd})";
+                    else
+                        keyName = $"Secret Key added on Setup ({DateTime.Now:yyyy-MM-dd})";
                     _serverConfigurationManager.CurrentServer!.SecretKeys.Add(_serverConfigurationManager.CurrentServer.SecretKeys.Select(k => k.Key).LastOrDefault() + 1, new SecretKey()
                     {
-                        FriendlyName = $"Secret Key added on Setup ({DateTime.Now:yyyy-MM-dd})",
+                        FriendlyName = keyName,
                         Key = _secretKey,
                     });
                     _serverConfigurationManager.AddCurrentCharacterToServer(addLastSecretKey: true);
@@ -230,6 +249,68 @@ public class IntroUi : WindowMediatorSubscriberBase
                     _ = Task.Run(() => _uiShared.ApiController.CreateConnections());
                 }
             }
+
+            if (_serverConfigurationManager.CurrentApiUrl == ApiController.LoporritServiceUri)
+            {
+                ImGui.BeginDisabled(_registrationInProgress || _registrationSuccess || _secretKey.Length > 0);
+                ImGui.Separator();
+                ImGui.TextUnformatted("If you do not have a secret key already click below to register a new account.");
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Plus, "Register a new Loporrit account"))
+                {
+                    _registrationInProgress = true;
+                    _ = Task.Run(async () => {
+                        try
+                        {
+                            using HttpClient httpClient = new();
+                            var ver = Assembly.GetExecutingAssembly().GetName().Version;
+                            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MareSynchronos", ver!.Major + "." + ver!.Minor + "." + ver!.Build));
+                            var postUri = MareAuth.AuthRegisterFullPath(new Uri(_serverConfigurationManager.CurrentApiUrl
+                                .Replace("wss://", "https://", StringComparison.OrdinalIgnoreCase)
+                                .Replace("ws://", "http://", StringComparison.OrdinalIgnoreCase)));
+                            _logger.LogInformation("Registering new account: " + postUri.ToString());
+                            var result = await httpClient.PostAsync(postUri, null).ConfigureAwait(false);
+                            result.EnsureSuccessStatusCode();
+                            var reply = await result.Content.ReadFromJsonAsync<RegisterReplyDto>().ConfigureAwait(false) ?? new();
+                            if (!reply.Success)
+                            {
+                                _logger.LogWarning("Registration failed: " + reply.ErrorMessage);
+                                _registrationMessage = reply.ErrorMessage;
+                                if (_registrationMessage.IsNullOrEmpty())
+                                    _registrationMessage = "An unknown error occured. Please try again later.";
+                                return;
+                            }
+                            _registrationMessage = "New account registered.\nPlease keep a copy of your secret key in case you need to reset your plugins, or to use it on another PC.";
+                            _secretKey = reply.SecretKey ?? "";
+                            _registrationReply = reply;
+                            _registrationSuccess = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Registration failed");
+                            _registrationSuccess = false;
+                            _registrationMessage = "An unknown error occured. Please try again later.";
+                        }
+                        finally
+                        {
+                            _registrationInProgress = false;
+                        }
+                    });
+                }
+                ImGui.EndDisabled(); // _registrationInProgress || _registrationSuccess
+                if (_registrationInProgress)
+                {
+                    ImGui.TextUnformatted("Sending request...");
+                }
+                else if (!_registrationMessage.IsNullOrEmpty())
+                {
+                    if (!_registrationSuccess)
+                        ImGui.TextColored(ImGuiColors.DalamudYellow, _registrationMessage);
+                    else
+                        ImGui.TextUnformatted(_registrationMessage);
+                }
+            }
+
+            ImGui.EndDisabled(); // _registrationInProgress
         }
         else
         {
