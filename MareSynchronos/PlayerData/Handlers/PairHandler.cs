@@ -447,6 +447,8 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
 
     private void IpcManagerOnPenumbraRedrawEvent(PenumbraRedrawMessage msg)
     {
+        // Disabled to avoid fighting with other plugins
+/*
         var player = _dalamudUtil.GetCharacterFromObjectTableByIndex(msg.ObjTblIdx);
         if (player == null || !string.Equals(player.Name.ToString(), PlayerName, StringComparison.OrdinalIgnoreCase)) return;
         _redrawCts = _redrawCts.CancelRecreate();
@@ -465,6 +467,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                     _cachedData, token).ConfigureAwait(false);
             }
         }, token);
+*/
     }
 
     private async Task RevertCustomizationDataAsync(ObjectKind objectKind, string name, Guid applicationId)
