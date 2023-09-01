@@ -11,7 +11,6 @@ public class ServerConfig : IMareConfiguration
     public List<ServerStorage> ServerStorage { get; set; } = new()
     {
         { new ServerStorage() { ServerName = ApiController.LoporritServer, ServerUri = ApiController.LoporritServiceUri } },
-        { new ServerStorage() { ServerName = ApiController.MainServer, ServerUri = ApiController.MainServiceUri } },
     };
 
     public int Version { get; set; } = 1;
