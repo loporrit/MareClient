@@ -38,7 +38,8 @@ public class HubFactory : MediatorSubscriberBase
             .WithUrl(_serverConfigurationManager.CurrentApiUrl + IMareHub.Path, options =>
             {
                 options.Headers.Add("Authorization", "Bearer " + _serverConfigurationManager.GetToken());
-                options.Transports = HttpTransportType.WebSockets | HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling;
+                options.SkipNegotiation = true;
+                options.Transports = HttpTransportType.WebSockets;
             })
             .AddMessagePackProtocol(opt =>
             {
