@@ -329,6 +329,24 @@ public class PlayerDataFactory
             totalWaitTime -= 50;
         }
 
+        if (objectKind == ObjectKind.Player)
+        {
+            bool inhuman = false;
+
+            unsafe
+            {
+                var drawObj = (DrawObject*)((Character*)charaPointer)->GameObject.GetDrawObject();
+                inhuman = (drawObj->Object.GetObjectType() == ObjectType.CharacterBase && ((CharacterBase*)drawObj)->GetModelType() != CharacterBase.ModelType.Human);
+            }
+
+            if (inhuman)
+            {
+                _logger.LogInformation("Skipping processing of character with non-Human model type");
+                return previousData;
+            }
+        }
+
+
         Stopwatch st = Stopwatch.StartNew();
 
         // gather static replacements from render model
