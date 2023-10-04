@@ -67,7 +67,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly FuncSubscriber<string[], string[], Task<(string[], string[][])>> _penumbraResolvePaths;
     private readonly ParamsFuncSubscriber<ushort, IReadOnlyDictionary<string, string[]>?[]> _penumbraResourcePaths;
     private readonly SemaphoreSlim _redrawSemaphore = new(2);
-    private readonly uint LockCode = 0x6D617265;
+    private readonly uint LockCode = 0x626E7579;
     private bool _customizePlusAvailable = false;
     private CancellationTokenSource _disposalCts = new();
     private bool _glamourerAvailable = false;
