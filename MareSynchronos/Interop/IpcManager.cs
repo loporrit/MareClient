@@ -17,7 +17,7 @@ namespace MareSynchronos.Interop;
 
 public sealed class IpcManager : DisposableMediatorSubscriberBase
 {
-    private readonly uint LockCode = 0x6D617265;
+    private readonly uint LockCode = 0x626E7579;
 
     private readonly ICallGateSubscriber<(int, int)> _customizePlusApiVersion;
     private readonly ICallGateSubscriber<Character?, string?> _customizePlusGetBodyScale;
