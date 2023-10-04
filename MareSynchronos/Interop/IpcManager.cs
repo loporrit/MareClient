@@ -278,6 +278,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
             }).ConfigureAwait(false);
         }
+        catch (Exception ex) {
+            Logger.LogWarning(ex, "Error during Glamourer Revert");
+        }
         finally
         {
             _redrawSemaphore.Release();
