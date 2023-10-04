@@ -470,6 +470,38 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
 */
     }
 
+    private void MediatorSubscribeToCharacterChanged()
+    {
+        // Disabled to avoid fighting with other plugins
+/*
+        Mediator.Subscribe<CharacterChangedMessage>(this, (msg) =>
+        {
+            if (msg.GameObjectHandler == _charaHandler && (_applicationTask?.IsCompleted ?? true))
+            {
+                Guid appBase = Guid.NewGuid();
+                var newGlamData = _ipcManager.GlamourerGetCharacterCustomizationAsync(PlayerCharacter).ConfigureAwait(false).GetAwaiter().GetResult();
+                if (!string.Equals(_lastGlamourerData, newGlamData, StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogTrace("[BASE-{appBase}] Saving new Glamourer Data for {this}", appBase, this);
+
+                    _lastGlamourerData = newGlamData;
+                    if (_cachedData != null)
+                    {
+                        ApplyCharacterData(appBase, _cachedData!, true);
+                    }
+                }
+            }
+        });
+*/
+    }
+
+    private void MediatorUnsubscribeFromCharacterChanged()
+    {
+/*
+        Mediator.Unsubscribe<CharacterChangedMessage>(this);
+*/
+    }
+
     private async Task RevertCustomizationDataAsync(ObjectKind objectKind, string name, Guid applicationId)
     {
         nint address = _dalamudUtil.GetPlayerCharacterFromCachedTableByIdent(OnlineUser.Ident);
