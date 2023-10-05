@@ -144,12 +144,12 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
 
         try
         {
-            await UploadFileStream(compressedFile, fileHash, _mareConfigService.Current.UseAlternativeFileUpload, uploadToken).ConfigureAwait(false);
+            await UploadFileStream(compressedFile, fileHash, false, uploadToken).ConfigureAwait(false);
             _verifiedUploadedHashes[fileHash] = DateTime.UtcNow;
         }
         catch (Exception ex)
         {
-            if (!_mareConfigService.Current.UseAlternativeFileUpload && ex is not OperationCanceledException)
+            if (false && ex is not OperationCanceledException)
             {
                 Logger.LogWarning(ex, "[{hash}] Error during file upload, trying alternative file upload", fileHash);
                 await UploadFileStream(compressedFile, fileHash, munged: true, uploadToken).ConfigureAwait(false);
@@ -165,6 +165,7 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
     {
         if (munged)
         {
+            throw new NotImplementedException();
             FileDownloadManager.MungeBuffer(compressedFile.AsSpan());
         }
 
