@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -17,6 +18,13 @@ namespace MareSynchronos.Services;
 
 public class DalamudUtilService : IHostedService
 {
+    private struct PlayerInfo
+    {
+        public String Name;
+        public uint WorldId;
+        public String Hash;
+    };
+
     private readonly List<uint> _classJobIdsIgnoredForPets = new() { 30 };
     private readonly IClientState _clientState;
     private readonly ICondition _condition;
@@ -33,6 +41,7 @@ public class DalamudUtilService : IHostedService
     private ushort _lastZone = 0;
     private Dictionary<string, (string Name, nint Address)> _playerCharas = new(StringComparer.Ordinal);
     private bool _sentBetweenAreas = false;
+    private static readonly Dictionary<uint, PlayerInfo> _playerInfoCache = new();
 
     public DalamudUtilService(ILogger<DalamudUtilService> logger, IClientState clientState, IObjectTable objectTable, IFramework framework,
         IGameGui gameGui, ICondition condition, IDataManager gameData, MareMediator mediator, PerformanceCollectorService performanceCollector)
@@ -333,13 +342,28 @@ public class DalamudUtilService : IHostedService
         return result;
     }
 
+    private PlayerInfo GetPlayerInfo(PlayerCharacter p)
+    {
+        uint id = p.ObjectId;
+
+        if (!_playerInfoCache.TryGetValue(id, out var info))
+        {
+            info.Name = p.Name.ToString();
+            info.WorldId = p.HomeWorld.Id;
+            info.Hash = Crypto.GetHash256(info.Name + info.WorldId.ToString());
+            _playerInfoCache[id] = info;
+        }
+
+        return info;
+    }
+
     private unsafe void CheckCharacterForDrawing(PlayerCharacter p)
     {
         if (!IsAnythingDrawing)
         {
             var gameObj = (GameObject*)p.Address;
             var drawObj = gameObj->DrawObject;
-            var playerName = p.Name.ToString();
+            var playerInfo = GetPlayerInfo(p);
             bool isDrawing = false;
             bool isDrawingChanged = false;
             if ((nint)drawObj != IntPtr.Zero)
@@ -353,9 +377,9 @@ public class DalamudUtilService : IHostedService
                         isDrawing = ((CharacterBase*)drawObj)->HasModelFilesInSlotLoaded != 0;
                         if (isDrawing)
                         {
-                            if (!string.Equals(_lastGlobalBlockPlayer, playerName, StringComparison.Ordinal) && !string.Equals(_lastGlobalBlockReason, "HasModelFilesInSlotLoaded"))
+                            if (!string.Equals(_lastGlobalBlockPlayer, playerInfo.Name, StringComparison.Ordinal) && !string.Equals(_lastGlobalBlockReason, "HasModelFilesInSlotLoaded"))
                             {
-                                _lastGlobalBlockPlayer = playerName;
+                                _lastGlobalBlockPlayer = playerInfo.Name;
                                 _lastGlobalBlockReason = "HasModelFilesInSlotLoaded";
                                 isDrawingChanged = true;
                             }
@@ -363,9 +387,9 @@ public class DalamudUtilService : IHostedService
                     }
                     else
                     {
-                        if (!string.Equals(_lastGlobalBlockPlayer, playerName, StringComparison.Ordinal) && !string.Equals(_lastGlobalBlockReason, "HasModelInSlotLoaded"))
+                        if (!string.Equals(_lastGlobalBlockPlayer, playerInfo.Name, StringComparison.Ordinal) && !string.Equals(_lastGlobalBlockReason, "HasModelInSlotLoaded"))
                         {
-                            _lastGlobalBlockPlayer = playerName;
+                            _lastGlobalBlockPlayer = playerInfo.Name;
                             _lastGlobalBlockReason = "HasModelInSlotLoaded";
                             isDrawingChanged = true;
                         }
@@ -373,9 +397,9 @@ public class DalamudUtilService : IHostedService
                 }
                 else
                 {
-                    if (!string.Equals(_lastGlobalBlockPlayer, playerName, StringComparison.Ordinal) && !string.Equals(_lastGlobalBlockReason, "RenderFlags"))
+                    if (!string.Equals(_lastGlobalBlockPlayer, playerInfo.Name, StringComparison.Ordinal) && !string.Equals(_lastGlobalBlockReason, "RenderFlags"))
                     {
-                        _lastGlobalBlockPlayer = playerName;
+                        _lastGlobalBlockPlayer = playerInfo.Name;
                         _lastGlobalBlockReason = "RenderFlags";
                         isDrawingChanged = true;
                     }
@@ -384,7 +408,7 @@ public class DalamudUtilService : IHostedService
 
             if (isDrawingChanged)
             {
-                _logger.LogTrace("Global draw block: START => {name} ({reason})", playerName, _lastGlobalBlockReason);
+                _logger.LogTrace("Global draw block: START => {name} ({reason})", playerInfo.Name, _lastGlobalBlockReason);
             }
 
             IsAnythingDrawing |= isDrawing;
@@ -404,13 +428,21 @@ public class DalamudUtilService : IHostedService
         }
 
         IsAnythingDrawing = false;
-        _playerCharas = _performanceCollector.LogPerformance(this, "ObjTableToCharas",
-            () => _objectTable.OfType<PlayerCharacter>().Where(o => o.ObjectIndex < 200)
-                .ToDictionary(p => p.GetHash256(), p =>
+        _playerCharas.Clear();
+        _performanceCollector.LogPerformance(this, "ObjTableToCharas",
+            () => {
+                foreach (var gobj in _objectTable)
                 {
-                    CheckCharacterForDrawing(p);
-                    return (p.Name.ToString(), p.Address);
-                }, StringComparer.Ordinal));
+                    var p = gobj as PlayerCharacter;
+                    if (p)
+                    {
+                        CheckCharacterForDrawing(p);
+                        var info = GetPlayerInfo(p);
+                        _playerCharas[info.Hash] = (info.Name, p.Address);
+                    }
+                }
+            }
+        );
 
         if (!IsAnythingDrawing && !string.IsNullOrEmpty(_lastGlobalBlockPlayer))
         {
@@ -461,6 +493,7 @@ public class DalamudUtilService : IHostedService
                     _sentBetweenAreas = true;
                     _mediator.Publish(new ZoneSwitchStartMessage());
                     _mediator.Publish(new HaltScanMessage("Zone switch"));
+                    _playerInfoCache.Clear();
                 }
             }
 
