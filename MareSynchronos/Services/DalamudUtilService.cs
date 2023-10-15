@@ -16,7 +16,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace MareSynchronos.Services;
 
-public class DalamudUtilService : IHostedService
+public class DalamudUtilService : MediatorSubscriberBase, IHostedService
 {
     private struct PlayerInfo
     {
@@ -30,6 +30,7 @@ public class DalamudUtilService : IHostedService
     private readonly ICondition _condition;
     private readonly IFramework _framework;
     private readonly IGameGui _gameGui;
+    private readonly IToastGui _toastGui;
     private readonly ILogger<DalamudUtilService> _logger;
     private readonly MareMediator _mediator;
     private readonly IObjectTable _objectTable;
@@ -44,13 +45,15 @@ public class DalamudUtilService : IHostedService
     private static readonly Dictionary<uint, PlayerInfo> _playerInfoCache = new();
 
     public DalamudUtilService(ILogger<DalamudUtilService> logger, IClientState clientState, IObjectTable objectTable, IFramework framework,
-        IGameGui gameGui, ICondition condition, IDataManager gameData, MareMediator mediator, PerformanceCollectorService performanceCollector)
+        IGameGui gameGui, IToastGui toastGui, ICondition condition, IDataManager gameData, MareMediator mediator,
+        PerformanceCollectorService performanceCollector) : base(logger, mediator)
     {
         _logger = logger;
         _clientState = clientState;
         _objectTable = objectTable;
         _framework = framework;
         _gameGui = gameGui;
+        _toastGui = toastGui;
         _condition = condition;
         _mediator = mediator;
         _performanceCollector = performanceCollector;
@@ -59,6 +62,23 @@ public class DalamudUtilService : IHostedService
             return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.World>(Dalamud.ClientLanguage.English)!
                 .Where(w => w.IsPublic && !w.Name.RawData.IsEmpty)
                 .ToDictionary(w => (ushort)w.RowId, w => w.Name.ToString());
+        });
+        Mediator.Subscribe<TargetPlayerIdentMessage>(this, (msg) => {
+            RunOnFrameworkThread(() => {
+                unsafe
+                {
+                    GameObject* gameObject = (GameObject*)GetPlayerCharacterFromCachedTableByIdent(msg.Ident);
+                    if (gameObject != null)
+                    {
+                        var pc = GetPlayerCharacter();
+                        // Any further than roughly 55y is out of range for targetting
+                        if (Vector3.Distance(pc.Position, gameObject->Position) < 55.0)
+                            TargetSystem.Instance()->Target = gameObject;
+                        else
+                            _toastGui.ShowError("Player out of range.");
+                    }
+                }
+            }).ConfigureAwait(false);
         });
     }
 

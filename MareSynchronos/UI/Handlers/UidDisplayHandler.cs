@@ -166,6 +166,12 @@ public class UidDisplayHandler
         _mediator.Publish(new ProfileOpenStandaloneMessage(entry));
     }
 
+    internal void TargetPlayer(Pair entry)
+    {
+        if (entry.HasCachedPlayer)
+            _mediator.Publish(new TargetPlayerIdentMessage(entry.GetPlayerNameHash()));
+    }
+
     private bool ShowUidInsteadOfName(Pair pair)
     {
         _showUidForEntry.TryGetValue(pair.UserData.UID, out var showUidInsteadOfName);
