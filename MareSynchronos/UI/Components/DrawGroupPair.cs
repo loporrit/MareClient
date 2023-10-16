@@ -289,6 +289,14 @@ public class DrawGroupPair : DrawPairBase
             }
 
             ImGui.Separator();
+            if (_pair.IsVisible)
+            {
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Eye, "Target player"))
+                {
+                    _displayHandler.TargetPlayer(_pair);
+                    ImGui.CloseCurrentPopup();
+                }
+            }
             if (!_pair.IsPaused)
             {
                 if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Open Profile"))
