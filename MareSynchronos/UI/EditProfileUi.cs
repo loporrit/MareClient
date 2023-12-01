@@ -35,7 +35,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
     public EditProfileUi(ILogger<EditProfileUi> logger, MareMediator mediator,
         ApiController apiController, UiBuilder uiBuilder, UiSharedService uiSharedService,
         FileDialogManager fileDialogManager, ServerConfigurationManager serverConfigurationManager,
-        MareProfileManager mareProfileManager) : base(logger, mediator, "Loporrit Edit Profile###LoporritSyncEditProfileUI")
+        MareProfileManager mareProfileManager) : base(logger, mediator, $"Loporrit Edit Profile###{LoporritSync.Plugin.AssemblyName}EditProfileUI")
     {
         IsOpen = false;
         this.SizeConstraints = new()

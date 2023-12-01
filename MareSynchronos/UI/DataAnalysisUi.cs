@@ -31,7 +31,7 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
     private bool _modalOpen = false;
     private bool _showModal = false;
 
-    public DataAnalysisUi(ILogger<DataAnalysisUi> logger, MareMediator mediator, CharacterAnalyzer characterAnalyzer, IpcManager ipcManager) : base(logger, mediator, "Mare Character Data Analysis")
+    public DataAnalysisUi(ILogger<DataAnalysisUi> logger, MareMediator mediator, CharacterAnalyzer characterAnalyzer, IpcManager ipcManager) : base(logger, mediator, $"Mare Character Data Analysis###{LoporritSync.Plugin.AssemblyName}DataAnalysisUI")
     {
         _characterAnalyzer = characterAnalyzer;
         _ipcManager = ipcManager;

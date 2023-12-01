@@ -75,11 +75,11 @@ public class CompactUi : WindowMediatorSubscriberBase
 #if DEBUG
         string dev = "Dev Build";
         var ver = Assembly.GetExecutingAssembly().GetName().Version!;
-        WindowName = $"Loporrit Sync {dev} ({ver.Major}.{ver.Minor}.{ver.Build}-lop{ver.Revision})###LoporritSyncMainUI";
+        WindowName = $"Loporrit Sync {dev} ({ver.Major}.{ver.Minor}.{ver.Build}-lop{ver.Revision})###{LoporritSync.Plugin.AssemblyName}MainUI";
         Toggle();
 #else
-        var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        WindowName = "Loporrit Sync " + ver.Major + "." + ver.Minor + "." + ver.Build + "-lop" + ver.Revision + "###LoporritSyncMainUI";
+        var ver = Assembly.GetExecutingAssembly().GetName().Version!;
+        WindowName = $"Loporrit Sync {ver.Major}.{ver.Minor}.{ver.Build}-lop{ver.Revision}###{LoporritSync.Plugin.AssemblyName}MainUI";
 #endif
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (_) => IsOpen = true);
         Mediator.Subscribe<SwitchToIntroUiMessage>(this, (_) => IsOpen = false);
@@ -458,7 +458,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             {
                 Mediator.Publish(new UiToggleMessage(typeof(EditProfileUi)));
             }
-            UiSharedService.AttachToolTip("Edit your Mare Profile");
+            UiSharedService.AttachToolTip("Edit your Profile");
         }
 
         ImGui.SameLine(ImGui.GetWindowContentRegionMin().X + UiSharedService.GetWindowContentRegionWidth() - buttonSize.X);

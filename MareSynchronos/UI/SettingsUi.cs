@@ -62,7 +62,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         MareMediator mediator, PerformanceCollectorService performanceCollector,
         FileUploadManager fileTransferManager,
         FileTransferOrchestrator fileTransferOrchestrator,
-        FileCompactor fileCompactor) : base(logger, mediator, "Loporrit Settings")
+        FileCompactor fileCompactor) : base(logger, mediator, $"Loporrit Settings###{LoporritSync.Plugin.AssemblyName}SettingsUI")
     {
         _configService = configService;
         _mareCharaFileManager = mareCharaFileManager;
@@ -433,7 +433,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Current.OpenGposeImportOnGposeStart = openInGpose;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will automatically open the import menu when loading into Gpose. If unchecked you can open the menu manually with /mare gpose");
+        UiSharedService.DrawHelpText("This will automatically open the import menu when loading into Gpose. If unchecked you can open the menu manually with /sync gpose");
 
         ImGui.Separator();
 

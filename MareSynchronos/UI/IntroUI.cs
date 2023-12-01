@@ -41,7 +41,7 @@ public class IntroUi : WindowMediatorSubscriberBase
     private RegisterReplyDto? _registrationReply;
 
     public IntroUi(ILogger<IntroUi> logger, UiSharedService uiShared, MareConfigService configService, ApiController apiController,
-        PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, "Loporrit Setup")
+        PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, $"Loporrit Setup###{LoporritSync.Plugin.AssemblyName}IntroUI")
     {
         _uiShared = uiShared;
         _configService = configService;
@@ -194,7 +194,7 @@ public class IntroUi : WindowMediatorSubscriberBase
                     _configService.Save();
                 }
                 UiSharedService.ColorTextWrapped("The File Compactor can save a tremendeous amount of space on the hard disk for downloads through Mare. It will incur a minor CPU penalty on download but can speed up " +
-                    "loading of other characters. It is recommended to keep it enabled. You can change this setting later anytime in the Mare settings.", ImGuiColors.DalamudYellow);
+                    "loading of other characters. It is recommended to keep it enabled. You can change this setting later anytime in the Loporrit settings.", ImGuiColors.DalamudYellow);
             }
         }
         else if (!_uiShared.ApiController.ServerAlive)

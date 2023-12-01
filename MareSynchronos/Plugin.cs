@@ -22,8 +22,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using LoporritSync;
-
 namespace LoporritSync;
 
 public sealed class Plugin : IDalamudPlugin
@@ -34,6 +32,8 @@ public sealed class Plugin : IDalamudPlugin
         IFramework framework, IObjectTable objectTable, IClientState clientState, ICondition condition, IChatGui chatGui,
         IGameGui gameGui, IToastGui toastGui, IDtrBar dtrBar, IPluginLog pluginLog)
     {
+        AssemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name!;
+
         _ = new HostBuilder()
         .UseContentRoot(pluginInterface.ConfigDirectory.FullName)
         .ConfigureLogging(lb =>
@@ -44,7 +44,7 @@ public sealed class Plugin : IDalamudPlugin
         })
         .ConfigureServices(collection =>
         {
-            collection.AddSingleton(new WindowSystem("LoporritSync"));
+            collection.AddSingleton(new WindowSystem(AssemblyName));
             collection.AddSingleton<FileDialogManager>();
             collection.AddSingleton(new Dalamud.Localization("MareSynchronos.Localization.", "", useEmbedded: true));
 
@@ -135,6 +135,7 @@ public sealed class Plugin : IDalamudPlugin
         .RunAsync(_pluginCts.Token);
     }
 
+    public static string AssemblyName { get; private set; } = null!;
     public string Name => "Loporrit Sync";
 
     public void Dispose()

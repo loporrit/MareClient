@@ -70,7 +70,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
     private DtrBarEntry CreateEntry()
     {
         _logger.LogTrace("Creating new DtrBar entry");
-        var entry = _dtrBar.Get("Loporrit");
+        var entry = _dtrBar.Get(LoporritSync.Plugin.AssemblyName);
         entry.OnClick = () => _mareMediator.Publish(new UiToggleMessage(typeof(CompactUi)));
 
         return entry;

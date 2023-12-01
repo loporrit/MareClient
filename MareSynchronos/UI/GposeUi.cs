@@ -18,7 +18,7 @@ public class GposeUi : WindowMediatorSubscriberBase
 
     public GposeUi(ILogger<GposeUi> logger, MareCharaFileManager mareCharaFileManager,
         DalamudUtilService dalamudUtil, FileDialogManager fileDialogManager, MareConfigService configService,
-        MareMediator mediator) : base(logger, mediator, "Loporrit Gpose Import UI###LoporritSyncGposeUI")
+        MareMediator mediator) : base(logger, mediator, $"Loporrit Gpose Import UI###{LoporritSync.Plugin.AssemblyName}GposeUI")
     {
         _mareCharaFileManager = mareCharaFileManager;
         _dalamudUtil = dalamudUtil;
@@ -71,7 +71,7 @@ public class GposeUi : WindowMediatorSubscriberBase
         {
             UiSharedService.ColorTextWrapped("Loading Character...", ImGuiColors.DalamudYellow);
         }
-        UiSharedService.TextWrapped("Hint: You can disable the automatic loading of this window in the Mare settings and open it manually with /mare gpose");
+        UiSharedService.TextWrapped("Hint: You can disable the automatic loading of this window in the Loporrit settings and open it manually with /sync gpose");
     }
 
     private void EndGpose()

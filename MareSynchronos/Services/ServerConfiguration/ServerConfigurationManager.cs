@@ -352,14 +352,14 @@ public class ServerConfigurationManager
         }
         if (mainIdx >= 0)
         {
-            _logger.LogDebug("Removing main server {ApiController.MainServiceUri}");
+            _logger.LogDebug($"Removing main server {ApiController.MainServiceUri}");
             _configService.Current.ServerStorage.RemoveAt(mainIdx);
             if (_configService.Current.CurrentServer >= mainIdx)
                 _configService.Current.CurrentServer--;
         }
         if (!lopExists)
         {
-            _logger.LogDebug("Re-adding missing server {ApiController.LoporritServiceUri}");
+            _logger.LogDebug($"Re-adding missing server {ApiController.LoporritServiceUri}");
             _configService.Current.ServerStorage.Insert(0, new ServerStorage() { ServerUri = ApiController.LoporritServiceUri, ServerName = ApiController.LoporritServer });
             if (_configService.Current.CurrentServer >= 0)
                 _configService.Current.CurrentServer++;

@@ -25,7 +25,7 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
 
     public StandaloneProfileUi(ILogger<StandaloneProfileUi> logger, MareMediator mediator, UiSharedService uiBuilder,
         ServerConfigurationManager serverManager, MareProfileManager mareProfileManager, Pair pair)
-        : base(logger, mediator, "Profile of " + pair.UserData.AliasOrUID + "##LoporritSyncStandaloneProfileUI" + pair.UserData.AliasOrUID)
+        : base(logger, mediator, "Profile of " + pair.UserData.AliasOrUID + $"###{LoporritSync.Plugin.AssemblyName}StandaloneProfileUI" + pair.UserData.AliasOrUID)
     {
         _uiSharedService = uiBuilder;
         _serverManager = serverManager;

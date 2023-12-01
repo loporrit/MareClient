@@ -28,7 +28,7 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
 
     public PopoutProfileUi(ILogger<PopoutProfileUi> logger, MareMediator mediator, UiSharedService uiBuilder,
         ServerConfigurationManager serverManager, MareConfigService mareConfigService,
-        MareProfileManager mareProfileManager) : base(logger, mediator, "###LoporritSyncPopoutProfileUI")
+        MareProfileManager mareProfileManager) : base(logger, mediator, $"###{LoporritSync.Plugin.AssemblyName}PopoutProfileUI")
     {
         _uiSharedService = uiBuilder;
         _serverManager = serverManager;
