@@ -24,6 +24,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly ICallGateSubscriber<string?, string?, object> _customizePlusOnScaleUpdate;
     private readonly ICallGateSubscriber<Character?, object> _customizePlusRevertCharacter;
     private readonly ICallGateSubscriber<string, Character?, object> _customizePlusSetBodyScaleToCharacter;
+    private readonly DalamudPluginInterface _pi;
     private readonly DalamudUtilService _dalamudUtil;
     private readonly ICallGateSubscriber<(int, int)> _glamourerApiVersions;
     private readonly ICallGateSubscriber<string, GameObject?, uint, object>? _glamourerApplyAll;
@@ -81,6 +82,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     public IpcManager(ILogger<IpcManager> logger, DalamudPluginInterface pi, DalamudUtilService dalamudUtil, MareMediator mediator) : base(logger, mediator)
     {
+        _pi = pi;
         _dalamudUtil = dalamudUtil;
 
         _penumbraInit = Penumbra.Api.Ipc.Initialized.Subscriber(pi, PenumbraInit);
@@ -318,12 +320,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
                 var gameObj = _dalamudUtil.CreateGameObject(character);
                 if (gameObj is Character c)
                 {
-                    var glamourerString = _glamourerGetAllCustomization!.InvokeFunc(c);
-                    byte[] bytes = Convert.FromBase64String(glamourerString);
-                    // ignore transparency
-                    bytes[88] = 128;
-                    bytes[89] = 63;
-                    return Convert.ToBase64String(bytes);
+                    return _glamourerGetAllCustomization!.InvokeFunc(c);
                 }
                 return string.Empty;
             }).ConfigureAwait(false);
@@ -643,7 +640,10 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         try
         {
             var version = _glamourerApiVersions.InvokeFunc();
-            if (version.Item1 == 0 && version.Item2 >= 1)
+            bool versionValid = (_pi.InstalledPlugins
+                .FirstOrDefault(p => string.Equals(p.InternalName, "Glamourer", StringComparison.OrdinalIgnoreCase))
+                ?.Version ?? new Version(0, 0, 0, 0)) >= new Version(1, 0, 6, 1);
+            if (version.Item1 == 0 && version.Item2 >= 1 && versionValid)
             {
                 apiAvailable = true;
             }
