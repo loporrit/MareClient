@@ -76,8 +76,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
         SizeConstraints = new WindowSizeConstraints()
         {
-            MinimumSize = new Vector2(800, 400),
-            MaximumSize = new Vector2(800, 2000),
+            MinimumSize = new Vector2(600, 400),
+            MaximumSize = new Vector2(600, 2000),
         };
 
         Mediator.Subscribe<OpenSettingsUiMessage>(this, (_) => Toggle());
@@ -110,7 +110,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _lastTab = "BlockedTransfers";
         UiSharedService.ColorTextWrapped("Files that you attempted to upload or download that were forbidden to be transferred by their creators will appear here. " +
                              "If you see file paths from your drive here, then those files were not allowed to be uploaded. If you see hashes, those files were not allowed to be downloaded. " +
-                             "Ask your paired friend to send you the mod in question through other means, acquire the mod yourself or pester the mod creator to allow it to be sent over Mare.",
+                             "Ask your paired friend to send you the mod in question through other means, acquire the mod yourself or pester the mod creator to allow it to be sent over Loporrit.",
             ImGuiColors.DalamudGrey);
 
         if (ImGui.BeginTable("TransfersTable", 2, ImGuiTableFlags.SizingStretchProp))
@@ -146,6 +146,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
         int maxParallelDownloads = _configService.Current.ParallelDownloads;
         bool useAlternativeUpload = _configService.Current.UseAlternativeFileUpload;
+        ImGui.SetNextItemWidth(250);
         if (ImGui.SliderInt("Maximum Parallel Downloads", ref maxParallelDownloads, 1, 10))
         {
             _configService.Current.ParallelDownloads = maxParallelDownloads;
@@ -201,6 +202,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("Shows download text (amount of MiB downloaded) in the transfer bars");
         int transferBarWidth = _configService.Current.TransferBarsWidth;
+        ImGui.SetNextItemWidth(250);
         if (ImGui.SliderInt("Transfer Bar Width", ref transferBarWidth, 10, 500))
         {
             _configService.Current.TransferBarsWidth = transferBarWidth;
@@ -208,6 +210,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("Width of the displayed transfer bars (will never be less wide than the displayed text)");
         int transferBarHeight = _configService.Current.TransferBarsHeight;
+        ImGui.SetNextItemWidth(250);
         if (ImGui.SliderInt("Transfer Bar Height", ref transferBarHeight, 2, 50))
         {
             _configService.Current.TransferBarsHeight = transferBarHeight;
@@ -377,8 +380,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
         UiSharedService.FontText("Export MCDF", _uiShared.UidFont);
 
-        UiSharedService.TextWrapped("This feature allows you to pack your character into a MCDF file and manually send it to other people. MCDF files can officially only be imported during GPose through Mare. " +
-            "Be aware that the possibility exists that people write unofficial custom exporters to extract the containing data.");
+        UiSharedService.TextWrapped("This feature allows you to pack your character into a MCDF file and manually send it to other people. MCDF files can only be imported during GPose. " +
+            "Be aware that are unofficial ways to extract the contained data.");
 
         ImGui.Checkbox("##readExport", ref _readExport);
         ImGui.SameLine();
@@ -456,21 +459,22 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("The file compactor can massively reduce your saved files. It might incur a minor penalty on loading files on a slow CPU." + Environment.NewLine
             + "It is recommended to leave it enabled to save on space.");
-        ImGui.SameLine();
+
+        ImGui.Indent();
         if (!_fileCompactor.MassCompactRunning)
         {
             if (UiSharedService.IconTextButton(FontAwesomeIcon.FileArchive, "Compact all files in storage"))
             {
                 _ = Task.Run(() => _fileCompactor.CompactStorage(true));
             }
-            UiSharedService.AttachToolTip("This will run compression on all files in your current Mare Storage." + Environment.NewLine
+            UiSharedService.AttachToolTip("This will run compression on all files in your current Loporrit Storage." + Environment.NewLine
                 + "You do not need to run this manually if you keep the file compactor enabled.");
             ImGui.SameLine();
             if (UiSharedService.IconTextButton(FontAwesomeIcon.File, "Decompact all files in storage"))
             {
                 _ = Task.Run(() => _fileCompactor.CompactStorage(false));
             }
-            UiSharedService.AttachToolTip("This will run decompression on all files in your current Mare Storage.");
+            UiSharedService.AttachToolTip("This will run decompression on all files in your current Loporrit Storage.");
         }
         else
         {
@@ -481,6 +485,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             ImGui.EndDisabled();
             ImGui.Text("The file compactor is only available on Windows.");
         }
+        ImGui.Unindent();
 
         ImGui.Dummy(new Vector2(10, 10));
         ImGui.Text("To clear the local storage accept the following disclaimer");
@@ -581,6 +586,18 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("This will add Loporrit connection status and visible pair count in the Server Info Bar.\nYou can further configure this through your Dalamud Settings.");
 
+        ImGui.Indent();
+        if (!_configService.Current.EnableDtrEntry) ImGui.BeginDisabled();
+        ImGui.SetNextItemWidth(250);
+        _uiShared.DrawCombo("Server Info Bar style", Enumerable.Range(0, DtrEntry.NumStyles), (i) => DtrEntry.RenderDtrStyle(i, "123"),
+        (i) =>
+        {
+            _configService.Current.DtrStyle = i;
+            _configService.Save();
+        }, _configService.Current.DtrStyle);
+        if (!_configService.Current.EnableDtrEntry) ImGui.EndDisabled();
+        ImGui.Unindent();
+
         if (ImGui.Checkbox("Show separate Visible group", ref showVisibleSeparate))
         {
             _configService.Current.ShowVisibleUsersSeparately = showVisibleSeparate;
@@ -636,6 +653,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Save();
         }
         UiSharedService.DrawHelpText("Will show profiles that have the NSFW tag enabled");
+        ImGui.SetNextItemWidth(250);
         if (ImGui.SliderFloat("Hover Delay", ref profileDelay, 1, 10))
         {
             _configService.Current.ProfileDelay = profileDelay;
@@ -653,6 +671,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var onlineNotifsNamedOnly = _configService.Current.ShowOnlineNotificationsOnlyForNamedPairs;
         UiSharedService.FontText("Notifications", _uiShared.UidFont);
 
+        ImGui.SetNextItemWidth(250);
         _uiShared.DrawCombo("Info Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
@@ -665,6 +684,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                       + Environment.NewLine + "'Toast' will show Warning toast notifications in the bottom right corner"
                       + Environment.NewLine + "'Both' will show chat as well as the toast notification");
 
+        ImGui.SetNextItemWidth(250);
         _uiShared.DrawCombo("Warning Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
@@ -677,6 +697,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                               + Environment.NewLine + "'Toast' will show Warning toast notifications in the bottom right corner"
                               + Environment.NewLine + "'Both' will show chat as well as the toast notification");
 
+        ImGui.SetNextItemWidth(250);
         _uiShared.DrawCombo("Error Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
@@ -819,7 +840,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             {
                 if (selectedServer.SecretKeys.Any())
                 {
-                    UiSharedService.ColorTextWrapped("Characters listed here will automatically connect to the selected Mare service with the settings as provided below." +
+                    UiSharedService.ColorTextWrapped("Characters listed here will automatically connect to the selected service with the settings as provided below." +
                         " Make sure to enter the character names correctly or use the 'Add current character' button at the bottom.", ImGuiColors.DalamudYellow);
                     int i = 0;
                     foreach (var item in selectedServer.Authentications.ToList())
