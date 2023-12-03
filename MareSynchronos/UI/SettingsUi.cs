@@ -1048,12 +1048,15 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         _serverConfigurationManager.Save();
                     }
                     var key = item.Value.Key;
+                    var keyInUse = selectedServer.Authentications.Exists(p => p.SecretKeyIdx == item.Key);
+                    if (keyInUse) ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudGrey3);
                     if (ImGui.InputText("Secret Key", ref key, 64))
                     {
                         item.Value.Key = key;
                         _serverConfigurationManager.Save();
                     }
-                    if (!selectedServer.Authentications.Exists(p => p.SecretKeyIdx == item.Key))
+                    if (keyInUse) ImGui.PopStyleColor();
+                    if (!keyInUse)
                     {
                         if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Trash, "Delete Secret Key") && UiSharedService.CtrlPressed())
                         {
@@ -1064,7 +1067,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     }
                     else
                     {
-                        UiSharedService.ColorTextWrapped("This key is in use and cannot be deleted", ImGuiColors.DalamudYellow);
+                        UiSharedService.ColorTextWrapped("This key is in use and cannot be edited or deleted", ImGuiColors.DalamudYellow);
                     }
 
                     if (item.Key != selectedServer.SecretKeys.Keys.LastOrDefault())
