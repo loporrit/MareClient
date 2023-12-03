@@ -976,7 +976,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     _serverConfigurationManager.Save();
                 }
 
-                if (selectedServer.ServerUri == ApiController.LoporritServiceUri)
+                if (_serverConfigurationManager.CurrentApiUrl != ApiController.MainServiceUri)
                 {
                     ImGui.SameLine();
                     if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Register a new Loporrit account"))
@@ -1026,14 +1026,14 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     }
                     if (_registrationInProgress)
                     {
-                        ImGui.Text("Sending request...");
+                        UiSharedService.TextWrapped("Sending request...");
                     }
                     else if (!_registrationMessage.IsNullOrEmpty())
                     {
                         if (!_registrationSuccess)
-                            ImGui.TextColored(ImGuiColors.DalamudYellow, _registrationMessage);
+                            UiSharedService.ColorTextWrapped(_registrationMessage, ImGuiColors.DalamudYellow);
                         else
-                            ImGui.Text(_registrationMessage);
+                            UiSharedService.TextWrapped(_registrationMessage);
                     }
                 }
 

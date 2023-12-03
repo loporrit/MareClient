@@ -248,7 +248,7 @@ public class IntroUi : WindowMediatorSubscriberBase
                 }
             }
 
-            if (_serverConfigurationManager.CurrentApiUrl == ApiController.LoporritServiceUri)
+            if (_serverConfigurationManager.CurrentApiUrl != ApiController.MainServiceUri)
             {
                 ImGui.BeginDisabled(_registrationInProgress || _registrationSuccess || _secretKey.Length > 0);
                 ImGui.Separator();
@@ -297,14 +297,14 @@ public class IntroUi : WindowMediatorSubscriberBase
                 ImGui.EndDisabled(); // _registrationInProgress || _registrationSuccess
                 if (_registrationInProgress)
                 {
-                    ImGui.Text("Sending request...");
+                    UiSharedService.TextWrapped("Sending request...");
                 }
                 else if (!_registrationMessage.IsNullOrEmpty())
                 {
                     if (!_registrationSuccess)
-                        ImGui.TextColored(ImGuiColors.DalamudYellow, _registrationMessage);
+                        UiSharedService.ColorTextWrapped(_registrationMessage, ImGuiColors.DalamudYellow);
                     else
-                        ImGui.Text(_registrationMessage);
+                        UiSharedService.TextWrapped(_registrationMessage);
                 }
             }
 
