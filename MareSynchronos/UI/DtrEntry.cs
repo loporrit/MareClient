@@ -12,6 +12,22 @@ namespace MareSynchronos.UI;
 
 public sealed class DtrEntry : IDisposable, IHostedService
 {
+    private enum DtrStyle
+    {
+        Default,
+        Style1,
+        Style2,
+        Style3,
+        Style4,
+        Style5,
+        Style6,
+        Style7,
+        Style8,
+        Style9
+    }
+
+    public const int NumStyles = 10;
+
     private readonly ApiController _apiController;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly ConfigurationServiceBase<MareConfig> _configService;
@@ -119,7 +135,8 @@ public sealed class DtrEntry : IDisposable, IHostedService
         if (_apiController.IsConnected)
         {
             var pairCount = _pairManager.GetVisibleUserCount();
-            text = $"\uE044 {pairCount}";
+
+            text = RenderDtrStyle(_configService.Current.DtrStyle, pairCount.ToString());
             if (pairCount > 0)
             {
                 IEnumerable<string> visiblePairs;
@@ -145,7 +162,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
         }
         else
         {
-            text = "\uE044 \uE04C";
+            text = RenderDtrStyle(_configService.Current.DtrStyle, "\uE04C");
             tooltip = "Loporrit: Not Connected";
         }
 
@@ -155,5 +172,23 @@ public sealed class DtrEntry : IDisposable, IHostedService
             _entry.Value.Text = text;
             _entry.Value.Tooltip = tooltip;
         }
+    }
+
+    public static string RenderDtrStyle(int styleNum, string text)
+    {
+        var style = (DtrStyle)styleNum;
+
+        return style switch {
+            DtrStyle.Style1 => $"\xE039 {text}",
+            DtrStyle.Style2 => $"\xE0BC {text}",
+            DtrStyle.Style3 => $"\xE0BD {text}",
+            DtrStyle.Style4 => $"\xE03A {text}",
+            DtrStyle.Style5 => $"\xE033 {text}",
+            DtrStyle.Style6 => $"\xE038 {text}",
+            DtrStyle.Style7 => $"\xE05D {text}",
+            DtrStyle.Style8 => $"\xE03C{text}",
+            DtrStyle.Style9 => $"\xE040 {text} \xE041",
+            _ => $"\uE044 {text}"
+        };
     }
 }

@@ -568,6 +568,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     {
         ColorTextWrapped("Note: The storage folder should be somewhere close to root (i.e. C:\\LoporritStorage) in a new empty folder. DO NOT point this to your game folder. DO NOT point this to your Penumbra folder.", ImGuiColors.DalamudYellow);
         var cacheDirectory = _configService.Current.CacheFolder;
+        ImGui.SetNextItemWidth(400);
         ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255, ImGuiInputTextFlags.ReadOnly);
 
         ImGui.SameLine();
@@ -618,7 +619,8 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         }
 
         float maxCacheSize = (float)_configService.Current.MaxLocalCacheInGiB;
-        if (ImGui.SliderFloat("Maximum Storage Size in GiB", ref maxCacheSize, 1f, 200f, "%.2f GiB"))
+        ImGui.SetNextItemWidth(250);
+        if (ImGui.SliderFloat("Maximum Storage Size", ref maxCacheSize, 1f, 200f, "%.2f GiB"))
         {
             _configService.Current.MaxLocalCacheInGiB = maxCacheSize;
             _configService.Save();
@@ -813,6 +815,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
             if (string.Equals(_serverConfigurationManager.CurrentServer?.ServerName, comboEntries[i], StringComparison.OrdinalIgnoreCase))
                 comboEntries[i] += " [Current]";
         }
+        ImGui.SetNextItemWidth(250);
         if (ImGui.BeginCombo("Select Service", comboEntries[_serverSelectionIndex]))
         {
             for (int i = 0; i < comboEntries.Length; i++)
@@ -876,6 +879,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     public void DrawTimeSpanBetweenScansSetting()
     {
         var timeSpan = _configService.Current.TimeSpanBetweenScansInSeconds;
+        ImGui.SetNextItemWidth(250);
         if (ImGui.SliderInt("Seconds between scans##timespan", ref timeSpan, 20, 60))
         {
             _configService.Current.TimeSpanBetweenScansInSeconds = timeSpan;
