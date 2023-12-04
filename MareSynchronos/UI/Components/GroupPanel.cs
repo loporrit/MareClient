@@ -200,14 +200,6 @@ internal sealed class GroupPanel
             _expandedGroupState[groupDto.GID] = !_expandedGroupState[groupDto.GID];
         }
         ImGui.PopStyleColor(2);
-        ImGui.SameLine(ImGui.GetWindowContentRegionMin().X + collapseButton.X);
-        var pauseIcon = groupDto.GroupUserPermissions.IsPaused() ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause;
-        if (ImGuiComponents.IconButton(pauseIcon))
-        {
-            var userPerm = groupDto.GroupUserPermissions ^ GroupUserPermissions.Paused;
-            _ = ApiController.GroupChangeIndividualPermissionState(new GroupPairUserPermissionDto(groupDto.Group, new UserData(ApiController.UID), userPerm));
-        }
-        UiSharedService.AttachToolTip((groupDto.GroupUserPermissions.IsPaused() ? "Resume" : "Pause") + " pairing with all users in this Syncshell");
         ImGui.SameLine();
 
         var textIsGid = true;
@@ -494,7 +486,13 @@ internal sealed class GroupPanel
         var barbuttonSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Bars);
         var isOwner = string.Equals(groupDto.OwnerUID, ApiController.UID, StringComparison.Ordinal);
 
-        ImGui.SameLine(ImGui.GetWindowContentRegionMin().X + UiSharedService.GetWindowContentRegionWidth() - barbuttonSize.X - (showInfoIcon ? iconSize.X : 0) - diffLockUnlockIcons - (showInfoIcon ? ImGui.GetStyle().ItemSpacing.X : 0));
+        var spacingX = ImGui.GetStyle().ItemSpacing.X;
+        var windowEndX = ImGui.GetWindowContentRegionMin().X + UiSharedService.GetWindowContentRegionWidth();
+        var pauseIcon = groupDto.GroupUserPermissions.IsPaused() ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause;
+        var pauseIconSize = UiSharedService.GetIconButtonSize(pauseIcon);
+
+        ImGui.SameLine(windowEndX - barbuttonSize.X - (showInfoIcon ? iconSize.X : 0) - diffLockUnlockIcons - (showInfoIcon ? spacingX : 0) - pauseIconSize.X - spacingX);
+
         if (showInfoIcon)
         {
             UiSharedService.FontText(infoIcon.ToIconString(), UiBuilder.IconFont);
@@ -576,6 +574,14 @@ internal sealed class GroupPanel
             }
             ImGui.SameLine();
         }
+
+        if (ImGuiComponents.IconButton(pauseIcon))
+        {
+            var userPerm = groupDto.GroupUserPermissions ^ GroupUserPermissions.Paused;
+            _ = ApiController.GroupChangeIndividualPermissionState(new GroupPairUserPermissionDto(groupDto.Group, new UserData(ApiController.UID), userPerm));
+        }
+        UiSharedService.AttachToolTip((groupDto.GroupUserPermissions.IsPaused() ? "Resume" : "Pause") + " pairing with all users in this Syncshell");
+        ImGui.SameLine();
 
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + diffLockUnlockIcons);
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Bars))
