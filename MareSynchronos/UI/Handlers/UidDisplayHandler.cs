@@ -5,6 +5,7 @@ using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.MareConfiguration;
 using ImGuiScene;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.UI.Components;
 
 namespace MareSynchronos.UI.Handlers;
 
@@ -29,6 +30,31 @@ public class UidDisplayHandler
         _pairManager = pairManager;
         _serverManager = serverManager;
         _mareConfigService = mareConfigService;
+    }
+
+    public void RenderPairList(IEnumerable<DrawPairBase> pairs)
+    {
+        var textHeight = ImGui.GetFontSize();
+        var style = ImGui.GetStyle();
+        var framePadding = style.FramePadding;
+        var spacing = style.ItemSpacing;
+        var lineHeight = textHeight + framePadding.Y * 2 + spacing.Y;
+        var startY = ImGui.GetCursorStartPos().Y;
+        var cursorY = ImGui.GetCursorPosY();
+        var contentHeight = UiSharedService.GetWindowContentRegionHeight();
+
+        foreach (var entry in pairs)
+        {
+            if ((startY + cursorY) < -lineHeight || (startY + cursorY) > contentHeight)
+            {
+                cursorY += lineHeight;
+                ImGui.SetCursorPosY(cursorY);
+                continue;
+            }
+
+            UiSharedService.DrawWithID(entry.ImGuiID, () => entry.DrawPairedClient());
+            cursorY += lineHeight;
+        }
     }
 
     public void DrawPairText(string id, Pair pair, float textPosX, float originalY, Func<float> editBoxWidth)

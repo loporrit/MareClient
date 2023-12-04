@@ -70,7 +70,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         _groupPanel = new(this, uiShared, _pairManager, uidDisplayHandler, _serverManager);
         _selectGroupForPairUi = new(tagHandler, uidDisplayHandler);
         _selectPairsForGroupUi = new(tagHandler, uidDisplayHandler);
-        _pairGroupsUi = new(configService, tagHandler, apiController, _selectPairsForGroupUi);
+        _pairGroupsUi = new(configService, tagHandler, uidDisplayHandler, apiController, _selectPairsForGroupUi);
 
 #if DEBUG
         string dev = "Dev Build";

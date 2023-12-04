@@ -316,6 +316,11 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         return ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
     }
 
+    public static float GetWindowContentRegionHeight()
+    {
+        return ImGui.GetWindowContentRegionMax().Y - ImGui.GetWindowContentRegionMin().Y;
+    }
+
     public static bool IconTextButton(FontAwesomeIcon icon, string text, float? width = null)
     {
         var buttonClicked = false;

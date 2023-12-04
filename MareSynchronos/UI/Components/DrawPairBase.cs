@@ -25,6 +25,7 @@ public abstract class DrawPairBase
         _displayHandler = uIDDisplayHandler;
     }
 
+    public string ImGuiID => _id;
     public string UID => _pair.UserData.UID;
 
     public void DrawPairedClient()
@@ -32,6 +33,20 @@ public abstract class DrawPairBase
         var originalY = ImGui.GetCursorPosY();
         var pauseIconSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Play);
         var textSize = ImGui.CalcTextSize(_pair.UserData.AliasOrUID);
+
+        var startPos = ImGui.GetCursorStartPos();
+
+        var framePadding = ImGui.GetStyle().FramePadding;
+        var lineHeight = textSize.Y + framePadding.Y * 2;
+
+        var off = startPos.Y;
+        var height = UiSharedService.GetWindowContentRegionHeight();
+
+        if ((originalY + off) < -lineHeight || (originalY + off) > height)
+        {
+            ImGui.Dummy(new System.Numerics.Vector2(0f, lineHeight));
+            return;
+        }
 
         var textPosY = originalY + pauseIconSize.Y / 2 - textSize.Y / 2;
         DrawLeftSide(textPosY, originalY);

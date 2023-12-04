@@ -392,59 +392,53 @@ internal sealed class GroupPanel
         ImGui.Indent(20);
         if (_expandedGroupState[groupDto.GID])
         {
-            var visibleUsers = pairsInGroup.Where(u => u.IsVisible)
+            var sortedPairs = pairsInGroup
                 .OrderByDescending(u => string.Equals(u.UserData.UID, groupDto.OwnerUID, StringComparison.Ordinal))
                 .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsModerator())
                 .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsPinned())
-                .ThenBy(u => u.GetNote() ?? u.UserData.AliasOrUID, StringComparer.OrdinalIgnoreCase)
-                .Select(c => new DrawGroupPair(groupDto.GID + c.UserData.UID, c, ApiController, groupDto, c.GroupPair.Single(g => GroupDataComparer.Instance.Equals(g.Key.Group, groupDto.Group)).Value,
-                    _uidDisplayHandler))
-                .ToList();
-            var onlineUsers = pairsInGroup.Where(u => u.IsOnline && !u.IsVisible)
-                .OrderByDescending(u => string.Equals(u.UserData.UID, groupDto.OwnerUID, StringComparison.Ordinal))
-                .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsModerator())
-                .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsPinned())
-                .ThenBy(u => u.GetNote() ?? u.UserData.AliasOrUID, StringComparer.OrdinalIgnoreCase)
-                .Select(c => new DrawGroupPair(groupDto.GID + c.UserData.UID, c, ApiController, groupDto, c.GroupPair.Single(g => GroupDataComparer.Instance.Equals(g.Key.Group, groupDto.Group)).Value,
-                    _uidDisplayHandler))
-                .ToList();
-            var offlineUsers = pairsInGroup.Where(u => !u.IsOnline && !u.IsVisible)
-                .OrderByDescending(u => string.Equals(u.UserData.UID, groupDto.OwnerUID, StringComparison.Ordinal))
-                .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsModerator())
-                .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsPinned())
-                .ThenBy(u => u.GetNote() ?? u.UserData.AliasOrUID, StringComparer.OrdinalIgnoreCase)
-                .Select(c => new DrawGroupPair(groupDto.GID + c.UserData.UID, c, ApiController, groupDto, c.GroupPair.Single(g => GroupDataComparer.Instance.Equals(g.Key.Group, groupDto.Group)).Value,
-                    _uidDisplayHandler))
-                .ToList();
+                .ThenBy(u => u.GetNote() ?? u.UserData.AliasOrUID, StringComparer.OrdinalIgnoreCase);
 
-            if (visibleUsers.Any())
+            var visibleUsers = new List<DrawGroupPair>();
+            var onlineUsers = new List<DrawGroupPair>();
+            var offlineUsers = new List<DrawGroupPair>();
+
+            foreach (var pair in sortedPairs)
+            {
+                var drawPair = new DrawGroupPair(
+                    groupDto.GID + pair.UserData.UID, pair,
+                    ApiController, groupDto,
+                    pair.GroupPair.Single(
+                        g => GroupDataComparer.Instance.Equals(g.Key.Group, groupDto.Group)
+                    ).Value,
+                    _uidDisplayHandler);
+
+                if (pair.IsVisible)
+                    visibleUsers.Add(drawPair);
+                else if (pair.IsOnline)
+                    onlineUsers.Add(drawPair);
+                else
+                    offlineUsers.Add(drawPair);
+            }
+
+            if (visibleUsers.Count > 0)
             {
                 ImGui.Text("Visible");
                 ImGui.Separator();
-                foreach (var entry in visibleUsers)
-                {
-                    UiSharedService.DrawWithID(groupDto.GID + entry.UID, () => entry.DrawPairedClient());
-                }
+                _uidDisplayHandler.RenderPairList(visibleUsers);
             }
 
-            if (onlineUsers.Any())
+            if (onlineUsers.Count > 0)
             {
                 ImGui.Text("Online");
                 ImGui.Separator();
-                foreach (var entry in onlineUsers)
-                {
-                    UiSharedService.DrawWithID(groupDto.GID + entry.UID, () => entry.DrawPairedClient());
-                }
+                _uidDisplayHandler.RenderPairList(onlineUsers);
             }
 
-            if (offlineUsers.Any())
+            if (offlineUsers.Count > 0)
             {
                 ImGui.Text("Offline/Unknown");
                 ImGui.Separator();
-                foreach (var entry in offlineUsers)
-                {
-                    UiSharedService.DrawWithID(groupDto.GID + entry.UID, () => entry.DrawPairedClient());
-                }
+                _uidDisplayHandler.RenderPairList(offlineUsers);
             }
 
             ImGui.Separator();
