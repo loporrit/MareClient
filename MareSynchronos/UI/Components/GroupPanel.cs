@@ -189,15 +189,13 @@ internal sealed class GroupPanel
             isExpanded = false;
             _expandedGroupState.Add(groupDto.GID, isExpanded);
         }
+
         var icon = isExpanded ? FontAwesomeIcon.CaretSquareDown : FontAwesomeIcon.CaretSquareRight;
-        var collapseButton = UiSharedService.GetIconButtonSize(icon);
-        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0, 0, 0, 0));
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(0, 0, 0, 0));
-        if (ImGuiComponents.IconButton(icon))
+        UiSharedService.FontText(icon.ToIconString(), UiBuilder.IconFont);
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
         {
             _expandedGroupState[groupDto.GID] = !_expandedGroupState[groupDto.GID];
         }
-        ImGui.PopStyleColor(2);
         ImGui.SameLine();
 
         var textIsGid = true;
@@ -391,7 +389,7 @@ internal sealed class GroupPanel
             ImGui.EndPopup();
         }
 
-        ImGui.Indent(collapseButton.X);
+        ImGui.Indent(20);
         if (_expandedGroupState[groupDto.GID])
         {
             var visibleUsers = pairsInGroup.Where(u => u.IsVisible)
@@ -452,7 +450,7 @@ internal sealed class GroupPanel
             ImGui.Separator();
             ImGui.Unindent(ImGui.GetStyle().ItemSpacing.X / 2);
         }
-        ImGui.Unindent(collapseButton.X);
+        ImGui.Unindent(20);
     }
 
     private void DrawSyncShellButtons(GroupFullInfoDto groupDto, List<Pair> groupPairs)
