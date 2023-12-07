@@ -442,7 +442,6 @@ internal sealed class GroupPanel
             }
 
             ImGui.Separator();
-            ImGui.Unindent(ImGui.GetStyle().ItemSpacing.X / 2);
         }
         ImGui.Unindent(20);
     }
