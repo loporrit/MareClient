@@ -42,10 +42,10 @@ public partial class ApiController
         await _mareHub!.SendAsync(nameof(GroupClear), group).ConfigureAwait(false);
     }
 
-    public async Task<GroupJoinDto> GroupCreate()
+    public async Task<GroupPasswordDto> GroupCreate()
     {
         CheckConnection();
-        return await _mareHub!.InvokeAsync<GroupJoinDto>(nameof(GroupCreate)).ConfigureAwait(false);
+        return await _mareHub!.InvokeAsync<GroupPasswordDto>(nameof(GroupCreate)).ConfigureAwait(false);
     }
 
     public async Task<List<string>> GroupCreateTempInvite(GroupDto group, int amount)
@@ -66,16 +66,10 @@ public partial class ApiController
         return await _mareHub!.InvokeAsync<List<BannedGroupUserDto>>(nameof(GroupGetBannedUsers), group).ConfigureAwait(false);
     }
 
-    public async Task<GroupJoinInfoDto> GroupJoin(GroupPasswordDto passwordedGroup)
+    public async Task<bool> GroupJoin(GroupPasswordDto passwordedGroup)
     {
         CheckConnection();
-        return await _mareHub!.InvokeAsync<GroupJoinInfoDto>(nameof(GroupJoin), passwordedGroup).ConfigureAwait(false);
-    }
-
-    public async Task<bool> GroupJoinFinalize(GroupJoinDto passwordedGroup)
-    {
-        CheckConnection();
-        return await _mareHub!.InvokeAsync<bool>(nameof(GroupJoinFinalize), passwordedGroup).ConfigureAwait(false);
+        return await _mareHub!.InvokeAsync<bool>(nameof(GroupJoin), passwordedGroup).ConfigureAwait(false);
     }
 
     public async Task GroupLeave(GroupDto group)
@@ -100,6 +94,12 @@ public partial class ApiController
     {
         CheckConnection();
         return await _mareHub!.InvokeAsync<List<GroupFullInfoDto>>(nameof(GroupsGetAll)).ConfigureAwait(false);
+    }
+
+    public async Task<List<GroupPairFullInfoDto>> GroupsGetUsersInGroup(GroupDto group)
+    {
+        CheckConnection();
+        return await _mareHub!.InvokeAsync<List<GroupPairFullInfoDto>>(nameof(GroupsGetUsersInGroup), group).ConfigureAwait(false);
     }
 
     public async Task GroupUnbanUser(GroupPairDto groupPair)

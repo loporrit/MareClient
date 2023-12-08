@@ -140,13 +140,13 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
                 }
             }
 
-            if (Pair.UserPair.Groups.Any())
+            if (Pair.GroupPair.Any())
             {
                 ImGui.TextUnformatted("Paired through Syncshells:");
-                foreach (var group in Pair.UserPair.Groups)
+                foreach (var groupPair in Pair.GroupPair.Select(k => k.Key))
                 {
-                    var groupNote = _serverManager.GetNoteForGid(group);
-                    var groupName = _pairManager.GroupPairs.First(f => string.Equals(f.Key.GID, group, StringComparison.Ordinal)).Key.GroupAliasOrGID;
+                    var groupNote = _serverManager.GetNoteForGid(groupPair.GID);
+                    var groupName = groupPair.GroupAliasOrGID;
                     var groupString = string.IsNullOrEmpty(groupNote) ? groupName : $"{groupNote} ({groupName})";
                     ImGui.TextUnformatted("- " + groupString);
                 }

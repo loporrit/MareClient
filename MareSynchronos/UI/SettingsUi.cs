@@ -559,7 +559,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var enableRightClickMenu = _configService.Current.EnableRightClickMenus;
         var enableDtrEntry = _configService.Current.EnableDtrEntry;
         var preferNotesInsteadOfName = _configService.Current.PreferNotesOverNamesForVisible;
-        var groupUpSyncshells = _configService.Current.GroupUpSyncshells;
 
         if (ImGui.Checkbox("Enable Game Right Click Menu Entries", ref enableRightClickMenu))
         {
@@ -579,7 +578,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
         {
             _configService.Current.ShowVisibleUsersSeparately = showVisibleSeparate;
             _configService.Save();
-            Mediator.Publish(new RefreshUiMessage());
         }
         UiSharedService.DrawHelpText("This will show all currently visible users in a special 'Visible' group in the main UI.");
 
@@ -587,23 +585,13 @@ public class SettingsUi : WindowMediatorSubscriberBase
         {
             _configService.Current.ShowOfflineUsersSeparately = showOfflineSeparate;
             _configService.Save();
-            Mediator.Publish(new RefreshUiMessage());
         }
         UiSharedService.DrawHelpText("This will show all currently offline users in a special 'Offline' group in the main UI.");
-
-        if (ImGui.Checkbox("Group up all syncshells in one folder", ref groupUpSyncshells))
-        {
-            _configService.Current.GroupUpSyncshells = groupUpSyncshells;
-            _configService.Save();
-            Mediator.Publish(new RefreshUiMessage());
-        }
-        UiSharedService.DrawHelpText("This will group up all Syncshells in a special 'All Syncshells' folder in the main UI.");
 
         if (ImGui.Checkbox("Show player name for visible players", ref showNameInsteadOfNotes))
         {
             _configService.Current.ShowCharacterNameInsteadOfNotesForVisible = showNameInsteadOfNotes;
             _configService.Save();
-            Mediator.Publish(new RefreshUiMessage());
         }
         UiSharedService.DrawHelpText("This will show the character name instead of custom set note when a character is visible");
 
@@ -613,7 +601,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
         {
             _configService.Current.PreferNotesOverNamesForVisible = preferNotesInsteadOfName;
             _configService.Save();
-            Mediator.Publish(new RefreshUiMessage());
         }
         UiSharedService.DrawHelpText("If you set a note for a player it will be shown instead of the player name");
         if (!_configService.Current.ShowCharacterNameInsteadOfNotesForVisible) ImGui.EndDisabled();
@@ -995,84 +982,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     }
                     UiSharedService.DrawHelpText("Hold CTRL to delete this service");
                 }
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem("Permission Settings"))
-            {
-                UiSharedService.FontText("Default Permission Settings", _uiShared.UidFont);
-                if (selectedServer == _serverConfigurationManager.CurrentServer && _apiController.IsConnected)
-                {
-                    UiSharedService.TextWrapped("Note: The default permissions settings here are not applied retroactively to existing pairs or joined Syncshells.");
-                    UiSharedService.TextWrapped("Note: The default permissions settings here are sent and stored on the connected service.");
-                    ImGui.Dummy(new(5f));
-                    var perms = _apiController.DefaultPermissions!;
-                    bool individualIsSticky = perms.IndividualIsSticky;
-                    bool disableIndividualSounds = perms.DisableIndividualSounds;
-                    bool disableIndividualAnimations = perms.DisableIndividualAnimations;
-                    bool disableIndividualVFX = perms.DisableIndividualVFX;
-                    if (ImGui.Checkbox("Individually set permissions become preferred permissions", ref individualIsSticky))
-                    {
-                        perms.IndividualIsSticky = individualIsSticky;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("The preferred attribute means that the permissions to that user will never change through any of your permission changes to Syncshells " +
-                        "(i.e. if you have paused one specific user in a Syncshell and they become preferred permissions, then pause and unpause the same Syncshell, the user will remain paused - " +
-                        "if a user does not have preferred permissions, it will follow the permissions of the Syncshell and be unpaused)." + Environment.NewLine + Environment.NewLine +
-                        "This setting means:" + Environment.NewLine +
-                        "  - All new individual pairs get their permissions defaulted to preferred permissions." + Environment.NewLine +
-                        "  - All individually set permissions for any pair will also automatically become preferred permissions. This includes pairs in Syncshells." + Environment.NewLine + Environment.NewLine +
-                        "It is possible to remove or set the preferred permission state for any pair at any time." + Environment.NewLine + Environment.NewLine +
-                        "If unsure, leave this setting off.");
-                    ImGui.Dummy(new(3f));
-
-                    if (ImGui.Checkbox("Disable individual pair sounds", ref disableIndividualSounds))
-                    {
-                        perms.DisableIndividualSounds = disableIndividualSounds;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("This setting will disable sound sync for all new individual pairs.");
-                    if (ImGui.Checkbox("Disable individual pair animations", ref disableIndividualAnimations))
-                    {
-                        perms.DisableIndividualAnimations = disableIndividualAnimations;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("This setting will disable animation sync for all new individual pairs.");
-                    if (ImGui.Checkbox("Disable individual pair VFX", ref disableIndividualVFX))
-                    {
-                        perms.DisableIndividualVFX = disableIndividualVFX;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("This setting will disable VFX sync for all new individual pairs.");
-                    ImGui.Dummy(new(5f));
-                    bool disableGroundSounds = perms.DisableGroupSounds;
-                    bool disableGroupAnimations = perms.DisableGroupAnimations;
-                    bool disableGroupVFX = perms.DisableGroupVFX;
-                    if (ImGui.Checkbox("Disable Syncshell pair sounds", ref disableGroundSounds))
-                    {
-                        perms.DisableGroupSounds = disableGroundSounds;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("This setting will disable sound sync for all non-sticky pairs in newly joined syncshells.");
-                    if (ImGui.Checkbox("Disable Syncshell pair animations", ref disableGroupAnimations))
-                    {
-                        perms.DisableGroupAnimations = disableGroupAnimations;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("This setting will disable animation sync for all non-sticky pairs in newly joined syncshells.");
-                    if (ImGui.Checkbox("Disable Syncshell pair VFX", ref disableGroupVFX))
-                    {
-                        perms.DisableGroupVFX = disableGroupVFX;
-                        _ = _apiController.UserUpdateDefaultPermissions(perms);
-                    }
-                    UiSharedService.DrawHelpText("This setting will disable VFX sync for all non-sticky pairs in newly joined syncshells.");
-                }
-                else
-                {
-                    UiSharedService.ColorTextWrapped("Default Permission Settings unavailable for this service. " +
-                        "You need to connect to this service to change the default permissions since they are stored on the service.", ImGuiColors.DalamudYellow);
-                }
-
                 ImGui.EndTabItem();
             }
             ImGui.EndTabBar();

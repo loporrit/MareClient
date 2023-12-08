@@ -80,7 +80,6 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             if (_isVisible != value)
             {
                 _isVisible = value;
-                Mediator.Publish(new RefreshUiMessage());
             }
         }
     }

@@ -143,44 +143,42 @@ internal class SyncshellAdminPopupHandler : IPopupHandler
         var permNode = ImRaii.TreeNode("Permissions");
         if (permNode)
         {
-            bool isDisableAnimations = perm.IsPreferDisableAnimations();
-            bool isDisableSounds = perm.IsPreferDisableSounds();
-            bool isDisableVfx = perm.IsPreferDisableVFX();
+            bool isDisableAnimations = perm.IsDisableAnimations();
+            bool isDisableSounds = perm.IsDisableSounds();
+            bool isDisableVfx = perm.IsDisableVFX();
 
             ImGui.AlignTextToFramePadding();
-            ImGui.Text("Suggest Sound Sync");
+            ImGui.Text("Sound Sync");
             UiSharedService.BooleanToColoredIcon(!isDisableSounds);
             ImGui.SameLine(230);
             if (UiSharedService.IconTextButton(isDisableSounds ? FontAwesomeIcon.VolumeUp : FontAwesomeIcon.VolumeMute,
-                isDisableSounds ? "Suggest to enable sound sync" : "Suggest to disable sound sync"))
+                isDisableSounds ? "Enable sound sync" : "Disable sound sync"))
             {
-                perm.SetPreferDisableSounds(!perm.IsPreferDisableSounds());
+                perm.SetDisableSounds(!perm.IsDisableSounds());
                 _ = _apiController.GroupChangeGroupPermissionState(new(_groupFullInfo.Group, perm));
             }
 
             ImGui.AlignTextToFramePadding();
-            ImGui.Text("Suggest Animation Sync");
+            ImGui.Text("Animation Sync");
             UiSharedService.BooleanToColoredIcon(!isDisableAnimations);
             ImGui.SameLine(230);
             if (UiSharedService.IconTextButton(isDisableAnimations ? FontAwesomeIcon.Running : FontAwesomeIcon.Stop,
-                isDisableAnimations ? "Suggest to enable animation sync" : "Suggest to disable animation sync"))
+                isDisableAnimations ? "Enable animation sync" : "Disable animation sync"))
             {
-                perm.SetPreferDisableAnimations(!perm.IsPreferDisableAnimations());
+                perm.SetDisableAnimations(!perm.IsDisableAnimations());
                 _ = _apiController.GroupChangeGroupPermissionState(new(_groupFullInfo.Group, perm));
             }
 
             ImGui.AlignTextToFramePadding();
-            ImGui.Text("Suggest VFX Sync");
+            ImGui.Text("VFX Sync");
             UiSharedService.BooleanToColoredIcon(!isDisableVfx);
             ImGui.SameLine(230);
             if (UiSharedService.IconTextButton(isDisableVfx ? FontAwesomeIcon.Sun : FontAwesomeIcon.Circle,
-                isDisableVfx ? "Suggest to enable vfx sync" : "Suggest to disable vfx sync"))
+                isDisableVfx ? "Enable VFX sync" : "Disable VFX sync"))
             {
-                perm.SetPreferDisableVFX(!perm.IsPreferDisableVFX());
+                perm.SetDisableVFX(!perm.IsDisableVFX());
                 _ = _apiController.GroupChangeGroupPermissionState(new(_groupFullInfo.Group, perm));
             }
-
-            UiSharedService.TextWrapped("Note: those suggested permissions will be shown to users on joining the Syncshell.");
         }
         permNode.Dispose();
 

@@ -35,7 +35,7 @@ public sealed class TokenProvider : IDisposable
         _httpClient.Dispose();
     }
 
-    public async Task<string> GetNewToken(bool isRenewal, CancellationToken token)
+    public async Task<string> GetNewToken(CancellationToken token)
     {
         Uri tokenUri;
         string response = string.Empty;
@@ -43,32 +43,18 @@ public sealed class TokenProvider : IDisposable
 
         try
         {
-            if (!isRenewal)
-            {
-                _logger.LogDebug("GetNewToken: Requesting");
+            _logger.LogDebug("GetNewToken: Requesting");
 
-                tokenUri = MareAuth.AuthFullPath(new Uri(_serverManager.CurrentApiUrl
-                    .Replace("wss://", "https://", StringComparison.OrdinalIgnoreCase)
-                    .Replace("ws://", "http://", StringComparison.OrdinalIgnoreCase)));
-                var secretKey = _serverManager.GetSecretKey()!;
-                var auth = secretKey.GetHash256();
-                result = await _httpClient.PostAsync(tokenUri, new FormUrlEncodedContent(new[]
-                {
-                            new KeyValuePair<string, string>("auth", auth),
-                            new KeyValuePair<string, string>("charaIdent", await _dalamudUtil.GetPlayerNameHashedAsync().ConfigureAwait(false)),
-                }), token).ConfigureAwait(false);
-            }
-            else
+            tokenUri = MareAuth.AuthFullPath(new Uri(_serverManager.CurrentApiUrl
+                .Replace("wss://", "https://", StringComparison.OrdinalIgnoreCase)
+                .Replace("ws://", "http://", StringComparison.OrdinalIgnoreCase)));
+            var secretKey = _serverManager.GetSecretKey()!;
+            var auth = secretKey.GetHash256();
+            result = await _httpClient.PostAsync(tokenUri, new FormUrlEncodedContent(new[]
             {
-                _logger.LogDebug("GetNewToken: Renewal");
-
-                tokenUri = MareAuth.RenewTokenFullPath(new Uri(_serverManager.CurrentApiUrl
-                    .Replace("wss://", "https://", StringComparison.OrdinalIgnoreCase)
-                    .Replace("ws://", "http://", StringComparison.OrdinalIgnoreCase)));
-                HttpRequestMessage request = new(HttpMethod.Get, tokenUri.ToString());
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenCache[CurrentIdentifier]);
-                result = await _httpClient.SendAsync(request, token).ConfigureAwait(false);
-            }
+                        new KeyValuePair<string, string>("auth", auth),
+                        new KeyValuePair<string, string>("charaIdent", await _dalamudUtil.GetPlayerNameHashedAsync().ConfigureAwait(false)),
+            }), token).ConfigureAwait(false);
 
             response = await result.Content.ReadAsStringAsync().ConfigureAwait(false);
             result.EnsureSuccessStatusCode();
@@ -88,31 +74,16 @@ public sealed class TokenProvider : IDisposable
             throw;
         }
 
-        var handler = new JwtSecurityTokenHandler();
-        var jwtToken = handler.ReadJwtToken(response);
         _logger.LogTrace("GetNewToken: JWT {token}", response);
-        _logger.LogDebug("GetNewToken: Valid until {date}, ValidClaim until {date}", jwtToken.ValidTo,
-                new DateTime(long.Parse(jwtToken.Claims.Single(c => string.Equals(c.Type, "expiration_date", StringComparison.Ordinal)).Value), DateTimeKind.Utc));
         return response;
     }
 
-    public async Task<string?> GetOrUpdateToken(CancellationToken ct, bool forceRenew = false)
+    public async Task<string?> GetOrUpdateToken(CancellationToken ct)
     {
-        bool renewal = forceRenew;
-        if (!forceRenew && _tokenCache.TryGetValue(CurrentIdentifier, out var token))
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(token);
-            if (jwtToken.ValidTo == DateTime.MinValue || jwtToken.ValidTo.Subtract(TimeSpan.FromMinutes(5)) > DateTime.UtcNow)
-            {
-                _logger.LogTrace("GetOrUpdate: Returning token from cache");
-                return token;
-            }
-
-            renewal = true;
-        }
+        if (_tokenCache.TryGetValue(CurrentIdentifier, out var token))
+            return token;
 
         _logger.LogTrace("GetOrUpdate: Getting new token");
-        return await GetNewToken(renewal, ct).ConfigureAwait(false);
+        return await GetNewToken(ct).ConfigureAwait(false);
     }
 }

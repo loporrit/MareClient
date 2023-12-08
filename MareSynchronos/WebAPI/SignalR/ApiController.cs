@@ -31,7 +31,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
     private bool _doNotNotifyOnNextInfo = false;
     private CancellationTokenSource? _healthCheckTokenSource = new();
     private bool _initialized;
-    private string? _lastUsedToken;
     private HubConnection? _mareHub;
     private ServerState _serverState;
 
@@ -65,7 +64,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
     public Version CurrentClientVersion => _connectionDto?.CurrentClientVersion ?? new Version(0, 0, 0);
 
-    public DefaultPermissionsDto? DefaultPermissions => _connectionDto?.DefaultPreferredPermissions ?? null;
     public string DisplayName => _connectionDto?.User.AliasOrUID ?? string.Empty;
 
     public bool IsConnected => ServerState == ServerState.Connected;
@@ -140,7 +138,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
                 try
                 {
-                    _lastUsedToken = await _tokenProvider.GetOrUpdateToken(token).ConfigureAwait(false);
+                    await _tokenProvider.GetOrUpdateToken(token).ConfigureAwait(false);
                 }
                 catch (MareAuthFailureException ex)
                 {
@@ -267,11 +265,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         {
             await Task.Delay(TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
             Logger.LogDebug("Checking Client Health State");
-
-            bool requireReconnect = await RefreshToken(ct).ConfigureAwait(false);
-
-            if (requireReconnect) continue;
-
             _ = await CheckClientHealth().ConfigureAwait(false);
         }
     }
@@ -305,8 +298,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         OnUserUpdateSelfPairPermissions(dto => _ = Client_UserUpdateSelfPairPermissions(dto));
         OnUserReceiveUploadStatus(dto => _ = Client_UserReceiveUploadStatus(dto));
         OnUserUpdateProfile(dto => _ = Client_UserUpdateProfile(dto));
-        OnUserDefaultPermissionUpdate(dto => _ = Client_UserUpdateDefaultPermissions(dto));
-        OnUpdateUserIndividualPairStatusDto(dto => _ = Client_UpdateUserIndividualPairStatusDto(dto));
 
         OnGroupChangePermissions((dto) => _ = Client_GroupChangePermissions(dto));
         OnGroupDelete((dto) => _ = Client_GroupDelete(dto));
@@ -315,7 +306,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         OnGroupPairLeft((dto) => _ = Client_GroupPairLeft(dto));
         OnGroupSendFullInfo((dto) => _ = Client_GroupSendFullInfo(dto));
         OnGroupSendInfo((dto) => _ = Client_GroupSendInfo(dto));
-        OnGroupChangeUserPairPermissions((dto) => _ = Client_GroupChangeUserPairPermissions(dto));
+        OnGroupPairChangePermissions((dto) => _ = Client_GroupPairChangePermissions(dto));
 
         _healthCheckTokenSource?.Cancel();
         _healthCheckTokenSource?.Dispose();
@@ -327,16 +318,24 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
     private async Task LoadIninitialPairs()
     {
+        foreach (var userPair in await UserGetPairedClients().ConfigureAwait(false))
+        {
+            Logger.LogDebug("Individual Pair: {userPair}", userPair);
+            _pairManager.AddUserPair(userPair, addToLastAddedUser: false);
+        }
         foreach (var entry in await GroupsGetAll().ConfigureAwait(false))
         {
             Logger.LogDebug("Group: {entry}", entry);
             _pairManager.AddGroup(entry);
         }
-
-        foreach (var userPair in await UserGetPairedClients().ConfigureAwait(false))
+        foreach (var group in _pairManager.GroupPairs.Keys)
         {
-            Logger.LogDebug("Individual Pair: {userPair}", userPair);
-            _pairManager.AddUserPair(userPair);
+            var users = await GroupsGetUsersInGroup(group).ConfigureAwait(false);
+            foreach (var user in users)
+        {
+                Logger.LogDebug("Group Pair: {user}", user);
+                _pairManager.AddGroupPair(user);
+            }
         }
     }
 
@@ -393,33 +392,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         _healthCheckTokenSource?.Cancel();
         ServerState = ServerState.Reconnecting;
         Logger.LogWarning(arg, "Connection closed... Reconnecting");
-    }
-
-    private async Task<bool> RefreshToken(CancellationToken ct)
-    {
-        Logger.LogDebug("Checking token");
-
-        bool requireReconnect = false;
-        try
-        {
-            var token = await _tokenProvider.GetOrUpdateToken(ct).ConfigureAwait(false);
-            if (!string.Equals(token, _lastUsedToken, StringComparison.Ordinal))
-            {
-                Logger.LogDebug("Reconnecting due to updated token");
-
-                _doNotNotifyOnNextInfo = true;
-                await CreateConnections().ConfigureAwait(false);
-                requireReconnect = true;
-            }
-        }
-        catch (MareAuthFailureException ex)
-        {
-            AuthFailureMessage = ex.Reason;
-            await StopConnection(ServerState.Unauthorized).ConfigureAwait(false);
-            requireReconnect = true;
-        }
-
-        return requireReconnect;
     }
 
     private async Task StopConnection(ServerState state)

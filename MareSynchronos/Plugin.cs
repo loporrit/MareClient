@@ -70,10 +70,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<PluginWarningNotificationService>();
             collection.AddSingleton<FileCompactor>();
             collection.AddSingleton<TagHandler>();
-            collection.AddSingleton<IdDisplayHandler>();
-            collection.AddSingleton<DrawEntityFactory>();
-            collection.AddSingleton<SelectPairForTagUi>();
-            collection.AddSingleton<SelectTagForPairUi>();
+            collection.AddSingleton<UidDisplayHandler>();
             collection.AddSingleton((s) => new DalamudContextMenu(pluginInterface));
             collection.AddSingleton((s) => new DalamudUtilService(s.GetRequiredService<ILogger<DalamudUtilService>>(),
                 clientState, objectTable, framework, gameGui, condition, gameData,
@@ -118,8 +115,6 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddScoped<WindowMediatorSubscriberBase, PopupHandler>();
             collection.AddScoped<IPopupHandler, ReportPopupHandler>();
             collection.AddScoped<IPopupHandler, BanUserPopupHandler>();
-            collection.AddScoped<IPopupHandler, CreateSyncshellPopupHandler>();
-            collection.AddScoped<IPopupHandler, JoinSyncshellPopupHandler>();
             collection.AddScoped<IPopupHandler, SyncshellAdminPopupHandler>();
             collection.AddScoped<CacheCreationService>();
             collection.AddScoped<TransientResourceManager>();

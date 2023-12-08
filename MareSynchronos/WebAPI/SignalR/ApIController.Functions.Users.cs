@@ -1,5 +1,4 @@
 ﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto;
 using MareSynchronos.API.Dto.User;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
@@ -7,7 +6,6 @@ using System.Text;
 
 namespace MareSynchronos.WebAPI;
 
-#pragma warning disable MA0040
 public partial class ApiController
 {
     public async Task PushCharacterData(CharacterData data, List<UserData> visibleCharacters)
@@ -16,7 +14,7 @@ public partial class ApiController
 
         try
         {
-            await PushCharacterDataInternal(data, [.. visibleCharacters]).ConfigureAwait(false);
+            await PushCharacterDataInternal(data, visibleCharacters.ToList()).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -46,14 +44,14 @@ public partial class ApiController
         return await _mareHub!.InvokeAsync<List<OnlineUserIdentDto>>(nameof(UserGetOnlinePairs)).ConfigureAwait(false);
     }
 
-    public async Task<List<UserFullPairDto>> UserGetPairedClients()
+    public async Task<List<UserPairDto>> UserGetPairedClients()
     {
-        return await _mareHub!.InvokeAsync<List<UserFullPairDto>>(nameof(UserGetPairedClients)).ConfigureAwait(false);
+        return await _mareHub!.InvokeAsync<List<UserPairDto>>(nameof(UserGetPairedClients)).ConfigureAwait(false);
     }
 
     public async Task<UserProfileDto> UserGetProfile(UserDto dto)
     {
-        if (!IsConnected) return new UserProfileDto(dto.User, Disabled: false, IsNSFW: null, ProfilePictureBase64: null, Description: null);
+        if (!IsConnected) return new UserProfileDto(dto.User, false, null, null, null);
         return await _mareHub!.InvokeAsync<UserProfileDto>(nameof(UserGetProfile), dto).ConfigureAwait(false);
     }
 
@@ -92,12 +90,6 @@ public partial class ApiController
         await _mareHub!.InvokeAsync(nameof(UserSetProfile), userDescription).ConfigureAwait(false);
     }
 
-    public async Task UserUpdateDefaultPermissions(DefaultPermissionsDto defaultPermissionsDto)
-    {
-        CheckConnection();
-        await _mareHub!.InvokeAsync(nameof(UserUpdateDefaultPermissions), defaultPermissionsDto).ConfigureAwait(false);
-    }
-
     private async Task PushCharacterDataInternal(CharacterData character, List<UserData> visibleCharacters)
     {
         Logger.LogInformation("Pushing character data for {hash} to {charas}", character.DataHash.Value, string.Join(", ", visibleCharacters.Select(c => c.AliasOrUID)));
@@ -114,4 +106,3 @@ public partial class ApiController
         await UserPushData(new(visibleCharacters, character)).ConfigureAwait(false);
     }
 }
-#pragma warning restore MA0040

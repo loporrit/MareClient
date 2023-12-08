@@ -165,7 +165,6 @@ public class ServerConfigurationManager
     {
         CurrentServerTagStorage().ServerAvailablePairTags.Add(tag);
         _serverTagConfig.Save();
-        _mareMediator.Publish(new RefreshUiMessage());
     }
 
     internal void AddTagForUid(string uid, string tagName)
@@ -173,7 +172,6 @@ public class ServerConfigurationManager
         if (CurrentServerTagStorage().UidServerPairedUserTags.TryGetValue(uid, out var tags))
         {
             tags.Add(tagName);
-            _mareMediator.Publish(new RefreshUiMessage());
         }
         else
         {
@@ -277,7 +275,6 @@ public class ServerConfigurationManager
             RemoveTagForUid(uid, tag, save: false);
         }
         _serverTagConfig.Save();
-        _mareMediator.Publish(new RefreshUiMessage());
     }
 
     internal void RemoveTagForUid(string uid, string tagName, bool save = true)
@@ -289,7 +286,6 @@ public class ServerConfigurationManager
             if (save)
             {
                 _serverTagConfig.Save();
-                _mareMediator.Publish(new RefreshUiMessage());
             }
         }
     }

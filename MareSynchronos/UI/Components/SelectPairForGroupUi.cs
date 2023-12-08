@@ -1,24 +1,23 @@
-﻿using Dalamud.Interface;
+﻿using System.Numerics;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.UI.Handlers;
 
-using System.Numerics;
-
 namespace MareSynchronos.UI.Components;
 
-public class SelectPairForTagUi
+public class SelectPairForGroupUi
 {
     private readonly TagHandler _tagHandler;
-    private readonly IdDisplayHandler _uidDisplayHandler;
+    private readonly UidDisplayHandler _uidDisplayHandler;
     private string _filter = string.Empty;
     private bool _opened = false;
     private HashSet<string> _peopleInGroup = new(StringComparer.Ordinal);
     private bool _show = false;
     private string _tag = string.Empty;
 
-    public SelectPairForTagUi(TagHandler tagHandler, IdDisplayHandler uidDisplayHandler)
+    public SelectPairForGroupUi(TagHandler tagHandler, UidDisplayHandler uidDisplayHandler)
     {
         _tagHandler = tagHandler;
         _uidDisplayHandler = uidDisplayHandler;

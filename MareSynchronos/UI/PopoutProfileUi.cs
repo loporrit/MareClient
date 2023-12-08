@@ -130,7 +130,7 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
                 ImGui.SameLine();
                 ImGui.TextUnformatted($"({_pair.PlayerName})");
             }
-            if (_pair.UserPair.IndividualPairStatus == API.Data.Enum.IndividualPairStatus.Bidirectional)
+            if (_pair.UserPair != null)
             {
                 ImGui.TextUnformatted("Directly paired");
                 if (_pair.UserPair.OwnPermissions.IsPaused())
@@ -144,13 +144,13 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
                     UiSharedService.ColorText("They: paused", ImGuiColors.DalamudYellow);
                 }
             }
-            if (_pair.UserPair.Groups.Any())
+            if (_pair.GroupPair.Any())
             {
                 ImGui.TextUnformatted("Paired through Syncshells:");
-                foreach (var group in _pair.UserPair.Groups)
+                foreach (var groupPair in _pair.GroupPair.Select(k => k.Key))
                 {
-                    var groupNote = _serverManager.GetNoteForGid(group);
-                    var groupName = _pairManager.GroupPairs.First(f => string.Equals(f.Key.GID, group, StringComparison.Ordinal)).Key.GroupAliasOrGID;
+                    var groupNote = _serverManager.GetNoteForGid(groupPair.GID);
+                    var groupName = groupPair.GroupAliasOrGID;
                     var groupString = string.IsNullOrEmpty(groupNote) ? groupName : $"{groupNote} ({groupName})";
                     ImGui.TextUnformatted("- " + groupString);
                 }

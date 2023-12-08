@@ -22,7 +22,6 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     private readonly PairFactory _pairFactory;
     private Lazy<List<Pair>> _directPairsInternal;
     private Lazy<Dictionary<GroupFullInfoDto, List<Pair>>> _groupPairsInternal;
-    private Lazy<Dictionary<Pair, List<GroupFullInfoDto>>> _pairsWithGroupsInternal;
 
     public PairManager(ILogger<PairManager> logger, PairFactory pairFactory,
                 MareConfigService configurationService, MareMediator mediator,
@@ -35,7 +34,6 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         Mediator.Subscribe<CutsceneEndMessage>(this, (_) => ReapplyPairData());
         _directPairsInternal = DirectPairsLazy();
         _groupPairsInternal = GroupPairsLazy();
-        _pairsWithGroupsInternal = PairsWithGroupsLazy();
 
         _dalamudContextMenu.OnOpenGameObjectContextMenu += DalamudContextMenuOnOnOpenGameObjectContextMenu;
     }
@@ -45,7 +43,6 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     public Dictionary<GroupFullInfoDto, List<Pair>> GroupPairs => _groupPairsInternal.Value;
     public Dictionary<GroupData, GroupFullInfoDto> Groups => _allGroups.ToDictionary(k => k.Key, k => k.Value);
     public Pair? LastAddedUser { get; internal set; }
-    public Dictionary<Pair, List<GroupFullInfoDto>> PairsWithGroups => _pairsWithGroupsInternal.Value;
 
     public void AddGroup(GroupFullInfoDto dto)
     {
@@ -56,24 +53,10 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     public void AddGroupPair(GroupPairFullInfoDto dto)
     {
         if (!_allClientPairs.ContainsKey(dto.User))
-            _allClientPairs[dto.User] = _pairFactory.Create(new UserFullPairDto(dto.User, API.Data.Enum.IndividualPairStatus.None,
-                [dto.Group.GID], dto.SelfToOtherPermissions, dto.OtherToSelfPermissions));
-        else _allClientPairs[dto.User].UserPair.Groups.Add(dto.GID);
-        RecreateLazy();
-    }
+            _allClientPairs[dto.User] = _pairFactory.Create();
 
-    public void AddUserPair(UserFullPairDto dto)
-    {
-        if (!_allClientPairs.ContainsKey(dto.User))
-        {
-            _allClientPairs[dto.User] = _pairFactory.Create(dto);
-        }
-        else
-        {
-            _allClientPairs[dto.User].UserPair.IndividualPairStatus = dto.IndividualPairStatus;
-            _allClientPairs[dto.User].ApplyLastReceivedData();
-        }
-
+        var group = _allGroups[dto.Group];
+        _allClientPairs[dto.User].GroupPair[group] = dto;
         RecreateLazy();
     }
 
@@ -81,16 +64,14 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         if (!_allClientPairs.ContainsKey(dto.User))
         {
-            _allClientPairs[dto.User] = _pairFactory.Create(dto);
+            _allClientPairs[dto.User] = _pairFactory.Create();
         }
         else
         {
             addToLastAddedUser = false;
         }
 
-        _allClientPairs[dto.User].UserPair.IndividualPairStatus = dto.IndividualPairStatus;
-        _allClientPairs[dto.User].UserPair.OwnPermissions = dto.OwnPermissions;
-        _allClientPairs[dto.User].UserPair.OtherPermissions = dto.OtherPermissions;
+        _allClientPairs[dto.User].UserPair = dto;
         if (addToLastAddedUser)
             LastAddedUser = _allClientPairs[dto.User];
         _allClientPairs[dto.User].ApplyLastReceivedData();
@@ -167,12 +148,14 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
         foreach (var item in _allClientPairs.ToList())
         {
-            item.Value.UserPair.Groups.Remove(data.GID);
-
-            if (!item.Value.HasAnyConnection())
+            foreach (var grpPair in item.Value.GroupPair.Select(k => k.Key).Where(grpPair => GroupDataComparer.Instance.Equals(grpPair.Group, data)).ToList())
             {
-                item.Value.MarkOffline();
-                _allClientPairs.TryRemove(item.Key, out _);
+                _allClientPairs[item.Key].GroupPair.Remove(grpPair);
+            }
+
+            if (!_allClientPairs[item.Key].HasAnyConnection() && _allClientPairs.TryRemove(item.Key, out var pair))
+            {
+                pair.MarkOffline();
             }
         }
 
@@ -183,7 +166,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         if (_allClientPairs.TryGetValue(dto.User, out var pair))
         {
-            pair.UserPair.Groups.Remove(dto.Group.GID);
+            var group = _allGroups[dto.Group];
+            pair.GroupPair.Remove(group);
 
             if (!pair.HasAnyConnection())
             {
@@ -199,7 +183,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         if (_allClientPairs.TryGetValue(dto.User, out var pair))
         {
-            pair.UserPair.IndividualPairStatus = API.Data.Enum.IndividualPairStatus.None;
+            pair.UserPair = null;
 
             if (!pair.HasAnyConnection())
             {
@@ -229,7 +213,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
         if (pair.UserPair == null) throw new InvalidOperationException("No direct pair for " + dto);
 
-        if (pair.UserPair.OtherPermissions.IsPaused() != dto.Permissions.IsPaused())
+        if (pair.UserPair.OtherPermissions.IsPaused() != dto.Permissions.IsPaused()
+            || pair.UserPair.OtherPermissions.IsPaired() != dto.Permissions.IsPaired())
         {
             Mediator.Publish(new ClearProfileDataMessage(dto.User));
         }
@@ -254,7 +239,10 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
             throw new InvalidOperationException("No such pair for " + dto);
         }
 
-        if (pair.UserPair.OwnPermissions.IsPaused() != dto.Permissions.IsPaused())
+        if (pair.UserPair == null) throw new InvalidOperationException("No direct pair for " + dto);
+
+        if (pair.UserPair.OwnPermissions.IsPaused() != dto.Permissions.IsPaused()
+            || pair.UserPair.OwnPermissions.IsPaired() != dto.Permissions.IsPaired())
         {
             Mediator.Publish(new ClearProfileDataMessage(dto.User));
         }
@@ -282,13 +270,37 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     internal void SetGroupPairStatusInfo(GroupPairUserInfoDto dto)
     {
-        _allGroups[dto.Group].GroupPairUserInfos[dto.UID] = dto.GroupUserInfo;
+        var group = _allGroups[dto.Group];
+        _allClientPairs[dto.User].GroupPair[group].GroupPairStatusInfo = dto.GroupUserInfo;
+        RecreateLazy();
+    }
+
+    internal void SetGroupPairUserPermissions(GroupPairUserPermissionDto dto)
+    {
+        var group = _allGroups[dto.Group];
+        var prevPermissions = _allClientPairs[dto.User].GroupPair[group].GroupUserPermissions;
+        _allClientPairs[dto.User].GroupPair[group].GroupUserPermissions = dto.GroupPairPermissions;
+        if (prevPermissions.IsDisableAnimations() != dto.GroupPairPermissions.IsDisableAnimations()
+            || prevPermissions.IsDisableSounds() != dto.GroupPairPermissions.IsDisableSounds()
+            || prevPermissions.IsDisableVFX() != dto.GroupPairPermissions.IsDisableVFX())
+        {
+            _allClientPairs[dto.User].ApplyLastReceivedData();
+        }
         RecreateLazy();
     }
 
     internal void SetGroupPermissions(GroupPermissionDto dto)
     {
+        var prevPermissions = _allGroups[dto.Group].GroupPermissions;
         _allGroups[dto.Group].GroupPermissions = dto.Permissions;
+        if (prevPermissions.IsDisableAnimations() != dto.Permissions.IsDisableAnimations()
+            || prevPermissions.IsDisableSounds() != dto.Permissions.IsDisableSounds()
+            || prevPermissions.IsDisableVFX() != dto.Permissions.IsDisableVFX())
+        {
+            RecreateLazy();
+            var group = _allGroups[dto.Group];
+            GroupPairs[group].ForEach(p => p.ApplyLastReceivedData());
+        }
         RecreateLazy();
     }
 
@@ -298,19 +310,19 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         RecreateLazy();
     }
 
-    internal void UpdateGroupPairPermissions(GroupPairUserPermissionDto dto)
+    internal void SetGroupUserPermissions(GroupPairUserPermissionDto dto)
     {
+        var prevPermissions = _allGroups[dto.Group].GroupUserPermissions;
         _allGroups[dto.Group].GroupUserPermissions = dto.GroupPairPermissions;
-        RecreateLazy();
-    }
-
-    internal void UpdateIndividualPairStatus(UserIndividualPairStatusDto dto)
-    {
-        if (_allClientPairs.TryGetValue(dto.User, out var pair))
+        if (prevPermissions.IsDisableAnimations() != dto.GroupPairPermissions.IsDisableAnimations()
+            || prevPermissions.IsDisableSounds() != dto.GroupPairPermissions.IsDisableSounds()
+            || prevPermissions.IsDisableVFX() != dto.GroupPairPermissions.IsDisableVFX())
         {
-            pair.UserPair.IndividualPairStatus = dto.IndividualPairStatus;
             RecreateLazy();
+            var group = _allGroups[dto.Group];
+            GroupPairs[group].ForEach(p => p.ApplyLastReceivedData());
         }
+        RecreateLazy();
     }
 
     protected override void Dispose(bool disposing)
@@ -334,7 +346,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     }
 
     private Lazy<List<Pair>> DirectPairsLazy() => new(() => _allClientPairs.Select(k => k.Value)
-        .Where(k => k.IndividualPairStatus != API.Data.Enum.IndividualPairStatus.None).ToList());
+        .Where(k => k.UserPair != null).ToList());
 
     private void DisposePairs()
     {
@@ -351,26 +363,11 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         return new Lazy<Dictionary<GroupFullInfoDto, List<Pair>>>(() =>
         {
-            Dictionary<GroupFullInfoDto, List<Pair>> outDict = [];
+            Dictionary<GroupFullInfoDto, List<Pair>> outDict = new();
             foreach (var group in _allGroups)
             {
-                outDict[group.Value] = _allClientPairs.Select(p => p.Value).Where(p => p.UserPair.Groups.Exists(g => GroupDataComparer.Instance.Equals(group.Key, new(g)))).ToList();
+                outDict[group.Value] = _allClientPairs.Select(p => p.Value).Where(p => p.GroupPair.Any(g => GroupDataComparer.Instance.Equals(group.Key, g.Key.Group))).ToList();
             }
-            return outDict;
-        });
-    }
-
-    private Lazy<Dictionary<Pair, List<GroupFullInfoDto>>> PairsWithGroupsLazy()
-    {
-        return new Lazy<Dictionary<Pair, List<GroupFullInfoDto>>>(() =>
-        {
-            Dictionary<Pair, List<GroupFullInfoDto>> outDict = [];
-
-            foreach (var pair in _allClientPairs.Select(k => k.Value))
-            {
-                outDict[pair] = _allGroups.Where(k => pair.UserPair.Groups.Contains(k.Key.GID, StringComparer.Ordinal)).Select(k => k.Value).ToList();
-            }
-
             return outDict;
         });
     }
@@ -387,7 +384,5 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         _directPairsInternal = DirectPairsLazy();
         _groupPairsInternal = GroupPairsLazy();
-        _pairsWithGroupsInternal = PairsWithGroupsLazy();
-        Mediator.Publish(new RefreshUiMessage());
     }
 }
