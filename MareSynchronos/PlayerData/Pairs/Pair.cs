@@ -44,6 +44,7 @@ public class Pair
     public bool IsVisible => CachedPlayer?.IsVisible ?? false;
     public CharacterData? LastReceivedCharacterData { get; set; }
     public string? PlayerName => CachedPlayer?.PlayerName ?? string.Empty;
+    public long LastAppliedDataSize => CachedPlayer?.LastAppliedDataSize ?? -1;
 
     public UserData UserData => UserPair?.User ?? GroupPair.First().Value.User;
 
@@ -58,9 +59,11 @@ public class Pair
         SeStringBuilder seStringBuilder = new();
         SeStringBuilder seStringBuilder2 = new();
         SeStringBuilder seStringBuilder3 = new();
+        SeStringBuilder seStringBuilder4 = new();
         var openProfileSeString = seStringBuilder.AddUiForeground(526).AddText(" ").AddUiForegroundOff().AddText("Open Profile").Build();
         var reapplyDataSeString = seStringBuilder2.AddUiForeground(526).AddText(" ").AddUiForegroundOff().AddText("Reapply last data").Build();
         var cyclePauseState = seStringBuilder3.AddUiForeground(526).AddText(" ").AddUiForegroundOff().AddText("Cycle pause state").Build();
+        var changePermissions = seStringBuilder4.AddUiForeground(526).AddText(" ").AddUiForegroundOff().AddText("Change Permissions").Build();
         args.AddCustomItem(new GameObjectContextMenuItem(openProfileSeString, (a) =>
         {
             _mediator.Publish(new ProfileOpenStandaloneMessage(this));
@@ -68,6 +71,10 @@ public class Pair
         args.AddCustomItem(new GameObjectContextMenuItem(reapplyDataSeString, (a) =>
         {
             ApplyLastReceivedData(forced: true);
+        }, useDalamudIndicator: false));
+        args.AddCustomItem(new GameObjectContextMenuItem(changePermissions, (a) =>
+        {
+            _mediator.Publish(new OpenPermissionWindow(this));
         }, useDalamudIndicator: false));
         args.AddCustomItem(new GameObjectContextMenuItem(cyclePauseState, (a) =>
         {

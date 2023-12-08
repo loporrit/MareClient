@@ -7,6 +7,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ImGuiNET;
 using MareSynchronos.API.Data.Extensions;
@@ -113,9 +114,9 @@ public class CompactUi : WindowMediatorSubscriberBase
                 $"It is highly recommended to keep Mare Synchronos up to date. Open /xlplugins and update the plugin.", ImGuiColors.DalamudRed);
         }
 
-        UiSharedService.DrawWithID("header", DrawUIDHeader);
+        using (ImRaii.PushId("header")) DrawUIDHeader();
         ImGui.Separator();
-        UiSharedService.DrawWithID("serverstatus", DrawServerStatus);
+        using (ImRaii.PushId("serverstatus")) DrawServerStatus();
 
         if (_apiController.ServerState is ServerState.Connected)
         {
@@ -159,17 +160,17 @@ public class CompactUi : WindowMediatorSubscriberBase
             ImGui.Separator();
             if (!hasShownSyncShells)
             {
-                UiSharedService.DrawWithID("pairlist", DrawPairList);
+                using (ImRaii.PushId("pairlist")) DrawPairList();
             }
             else
             {
-                UiSharedService.DrawWithID("syncshells", _groupPanel.DrawSyncshells);
+                using (ImRaii.PushId("syncshells")) _groupPanel.DrawSyncshells();
             }
             ImGui.Separator();
-            UiSharedService.DrawWithID("transfers", DrawTransfers);
+            using (ImRaii.PushId("transfers")) DrawTransfers();
             TransferPartHeight = ImGui.GetCursorPosY() - TransferPartHeight;
-            UiSharedService.DrawWithID("group-user-popup", () => _selectPairsForGroupUi.Draw(_pairManager.DirectPairs));
-            UiSharedService.DrawWithID("grouping-popup", () => _selectGroupForPairUi.Draw());
+            using (ImRaii.PushId("group-user-popup")) _selectPairsForGroupUi.Draw(_pairManager.DirectPairs);
+            using (ImRaii.PushId("grouping-popup")) _selectGroupForPairUi.Draw();
         }
 
         if (_configService.Current.OpenPopupOnAdd && _pairManager.LastAddedUser != null)
@@ -191,7 +192,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             {
                 UiSharedService.TextWrapped($"You have successfully added {_lastAddedUser.UserData.AliasOrUID}. Set a local note for the user in the field below:");
                 ImGui.InputTextWithHint("##noteforuser", $"Note for {_lastAddedUser.UserData.AliasOrUID}", ref _lastAddedUserComment, 100);
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "Save Note"))
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Save, "Save Note"))
                 {
                     _serverManager.SetNoteForUid(_lastAddedUser.UserData.UID, _lastAddedUserComment);
                     _lastAddedUser = null;
@@ -226,7 +227,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         if (keys.Any())
         {
             if (_secretKeyIdx == -1) _secretKeyIdx = keys.First().Key;
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add current character with secret key"))
+            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Plus, "Add current character with secret key"))
             {
                 _serverManager.CurrentServer!.Authentications.Add(new MareConfiguration.Models.Authentication()
                 {
@@ -344,10 +345,10 @@ public class CompactUi : WindowMediatorSubscriberBase
 
     private void DrawPairList()
     {
-        UiSharedService.DrawWithID("addpair", DrawAddPair);
-        UiSharedService.DrawWithID("pairs", DrawPairs);
+        using (ImRaii.PushId("addpair")) DrawAddPair();
+        using (ImRaii.PushId("pairs")) DrawPairs();
         TransferPartHeight = ImGui.GetCursorPosY();
-        UiSharedService.DrawWithID("filter", DrawFilter);
+        using (ImRaii.PushId("filter")) DrawFilter();
     }
 
     private void DrawPairs()
@@ -498,9 +499,9 @@ public class CompactUi : WindowMediatorSubscriberBase
             ImGui.TextUnformatted("No downloads in progress");
         }
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.PersonCircleQuestion, "Mare Character Data Analysis", WindowContentWidth))
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.PersonCircleQuestion, "Mare Character Data Analysis", WindowContentWidth))
         {
-            Mediator.Publish(new OpenDataAnalysisUiMessage());
+            Mediator.Publish(new UiToggleMessage(typeof(DataAnalysisUi)));
         }
 
         ImGui.SameLine();

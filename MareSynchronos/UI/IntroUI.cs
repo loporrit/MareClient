@@ -37,6 +37,8 @@ public class IntroUi : WindowMediatorSubscriberBase
         _serverConfigurationManager = serverConfigurationManager;
 
         IsOpen = false;
+        ShowCloseButton = false;
+        RespectCloseHotkey = false;
 
         SizeConstraints = new WindowSizeConstraints()
         {
@@ -60,9 +62,7 @@ public class IntroUi : WindowMediatorSubscriberBase
 
         if (!_configService.Current.AcceptedAgreement && !_readFirstPage)
         {
-            if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
-            ImGui.TextUnformatted("Welcome to Mare Synchronos");
-            if (_uiShared.UidFontBuilt) ImGui.PopFont();
+            _uiShared.BigText("Welcome to Mare Synchronos");
             ImGui.Separator();
             UiSharedService.TextWrapped("Mare Synchronos is a plugin that will replicate your full current character state including all Penumbra mods to other paired Mare Synchronos users. " +
                               "Note that you will have to have Penumbra as well as Glamourer installed to use this plugin.");

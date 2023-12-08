@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using Dalamud.Interface;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ImGuiNET;
 using MareSynchronos.PlayerData.Pairs;
@@ -65,14 +65,14 @@ public class SelectGroupForPairUi
             {
                 foreach (var tag in tags)
                 {
-                    UiSharedService.DrawWithID($"groups-pair-{_pair.UserData.UID}-{tag}", () => DrawGroupName(_pair, tag));
+                    using (ImRaii.PushId($"groups-pair-{_pair.UserData.UID}-{tag}")) DrawGroupName(_pair, tag);
                 }
                 ImGui.EndChild();
             }
 
             ImGui.Separator();
             UiSharedService.FontText($"Create a new group for {name}.", UiBuilder.DefaultFont);
-            if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus))
+            if (UiSharedService.NormalizedIconButton(FontAwesomeIcon.Plus))
             {
                 HandleAddTag();
             }

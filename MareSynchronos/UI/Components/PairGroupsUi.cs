@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using MareSynchronos.API.Data.Extensions;
 using MareSynchronos.MareConfiguration;
@@ -81,7 +82,7 @@ public class PairGroupsUi
 
         if (ImGui.BeginPopup("Group Flyout Menu"))
         {
-            UiSharedService.DrawWithID($"buttons-{tag}", () => DrawGroupMenu(tag));
+            using (ImRaii.PushId($"buttons-{tag}")) DrawGroupMenu(tag);
             ImGui.EndPopup();
         }
     }
@@ -113,7 +114,7 @@ public class PairGroupsUi
         {
             if (onlineUsers.Any() && onlineUsers.First() is DrawUserPair)
             {
-                UiSharedService.DrawWithID($"group-{tag}-buttons", () => DrawButtons(tag, allUsers.Cast<DrawUserPair>().Where(p => otherUidsTaggedWithTag!.Contains(p.UID)).ToList()));
+                using (ImRaii.PushId($"group-{tag}-buttons")) DrawButtons(tag, allUsers.Cast<DrawUserPair>().Where(p => otherUidsTaggedWithTag!.Contains(p.UID)).ToList());
             }
         }
 
@@ -126,13 +127,13 @@ public class PairGroupsUi
 
     private void DrawGroupMenu(string tag)
     {
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Users, "Add people to " + tag))
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Users, "Add people to " + tag))
         {
             _selectGroupForPairUi.Open(tag);
         }
         UiSharedService.AttachToolTip($"Add more users to Group {tag}");
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete " + tag) && UiSharedService.CtrlPressed())
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Trash, "Delete " + tag) && UiSharedService.CtrlPressed())
         {
             _tagHandler.RemoveTag(tag);
         }
@@ -183,7 +184,7 @@ public class PairGroupsUi
         // These are all the OtherUIDs that are tagged with this tag
         foreach (var pair in availablePairsInThisCategory)
         {
-            UiSharedService.DrawWithID($"tag-{tag}-pair-${pair.UID}", () => pair.DrawPairedClient());
+            using (ImRaii.PushId($"tag-{tag}-pair-${pair.UID}")) pair.DrawPairedClient();
         }
         ImGui.Separator();
     }
@@ -192,33 +193,33 @@ public class PairGroupsUi
     {
         if (_mareConfig.Current.ShowVisibleUsersSeparately)
         {
-            UiSharedService.DrawWithID("$group-VisibleCustomTag", () => DrawCategory(TagHandler.CustomVisibleTag, visibleUsers, allUsers));
+            using (ImRaii.PushId("$group-VisibleCustomTag")) DrawCategory(TagHandler.CustomVisibleTag, visibleUsers, allUsers);
         }
         foreach (var tag in tagsWithPairsInThem)
         {
             if (_mareConfig.Current.ShowOfflineUsersSeparately)
             {
-                UiSharedService.DrawWithID($"group-{tag}", () => DrawCategory(tag, onlineUsers, allUsers, visibleUsers));
+                using (ImRaii.PushId($"group-{tag}")) DrawCategory(tag, onlineUsers, allUsers, visibleUsers);
             }
             else
             {
-                UiSharedService.DrawWithID($"group-{tag}", () => DrawCategory(tag, onlineUsers.Concat(offlineUsers).ToList(), allUsers, visibleUsers));
+                using (ImRaii.PushId($"group-{tag}")) DrawCategory(tag, onlineUsers.Concat(offlineUsers).ToList(), allUsers, visibleUsers);
             }
         }
         if (_mareConfig.Current.ShowOfflineUsersSeparately)
         {
-            UiSharedService.DrawWithID($"group-OnlineCustomTag", () => DrawCategory(TagHandler.CustomOnlineTag,
-                onlineUsers.Where(u => !_tagHandler.HasAnyTag(u.UID)).ToList(), allUsers));
-            UiSharedService.DrawWithID($"group-OfflineCustomTag", () => DrawCategory(TagHandler.CustomOfflineTag,
-                offlineUsers.Where(u => u.UserPair!.OtherPermissions.IsPaired()).ToList(), allUsers));
+            using (ImRaii.PushId($"group-OnlineCustomTag")) DrawCategory(TagHandler.CustomOnlineTag,
+                onlineUsers.Where(u => !_tagHandler.HasAnyTag(u.UID)).ToList(), allUsers);
+            using (ImRaii.PushId($"group-OfflineCustomTag")) DrawCategory(TagHandler.CustomOfflineTag,
+                offlineUsers.Where(u => u.UserPair!.OtherPermissions.IsPaired()).ToList(), allUsers);
         }
         else
         {
-            UiSharedService.DrawWithID($"group-OnlineCustomTag", () => DrawCategory(TagHandler.CustomOnlineTag,
-                onlineUsers.Concat(offlineUsers).Where(u => u.UserPair!.OtherPermissions.IsPaired() && !_tagHandler.HasAnyTag(u.UID)).ToList(), allUsers));
+            using (ImRaii.PushId($"group-OnlineCustomTag")) DrawCategory(TagHandler.CustomOnlineTag,
+                onlineUsers.Concat(offlineUsers).Where(u => u.UserPair!.OtherPermissions.IsPaired() && !_tagHandler.HasAnyTag(u.UID)).ToList(), allUsers);
         }
-        UiSharedService.DrawWithID($"group-UnpairedCustomTag", () => DrawCategory(TagHandler.CustomUnpairedTag,
-            offlineUsers.Where(u => !u.UserPair!.OtherPermissions.IsPaired()).ToList(), allUsers));
+        using (ImRaii.PushId($"group-UnpairedCustomTag")) DrawCategory(TagHandler.CustomUnpairedTag,
+            offlineUsers.Where(u => !u.UserPair!.OtherPermissions.IsPaired()).ToList(), allUsers);
     }
 
     private void PauseRemainingPairs(List<DrawUserPair> availablePairs)

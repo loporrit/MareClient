@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface;
 using ImGuiNET;
 using MareSynchronos.PlayerData.Pairs;
@@ -66,7 +67,13 @@ public class DrawUserPair : DrawPairBase
             ImGui.PushFont(UiBuilder.IconFont);
             UiSharedService.ColorText(FontAwesomeIcon.Eye.ToIconString(), ImGuiColors.ParsedGreen);
             ImGui.PopFont();
-            UiSharedService.AttachToolTip(_pair.UserData.AliasOrUID + " is visible: " + _pair.PlayerName!);
+            var visibleTooltip = _pair.UserData.AliasOrUID + " is visible: " + _pair.PlayerName!;
+            if (_pair.LastAppliedDataSize >= 0)
+            {
+                visibleTooltip += UiSharedService.TooltipSeparator +
+                    "Loaded Mods Size: " + UiSharedService.ByteToString(_pair.LastAppliedDataSize, true);
+            }
+            UiSharedService.AttachToolTip(visibleTooltip);
         }
     }
 
@@ -90,7 +97,7 @@ public class DrawUserPair : DrawPairBase
             {
                 var infoIconPosDist = windowEndX - barButtonSize.X - spacingX - pauseIconSize.X - spacingX;
                 var icon = FontAwesomeIcon.ExclamationTriangle;
-                var iconwidth = UiSharedService.GetIconSize(icon);
+                var iconwidth = UiSharedService.GetIconButtonSize(icon);
 
                 rightSideStart = infoIconPosDist - iconwidth.X;
                 ImGui.SameLine(infoIconPosDist - iconwidth.X);
@@ -172,7 +179,7 @@ public class DrawUserPair : DrawPairBase
         }
         if (ImGui.BeginPopup("User Flyout Menu"))
         {
-            UiSharedService.DrawWithID($"buttons-{_pair.UserData.UID}", () => DrawPairedClientMenu(_pair));
+            using (ImRaii.PushId($"buttons-{_pair.UserData.UID}")) DrawPairedClientMenu(_pair);
             ImGui.EndPopup();
         }
 
@@ -183,7 +190,7 @@ public class DrawUserPair : DrawPairBase
     {
         if (!entry.IsPaused)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Open Profile"))
+            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.User, "Open Profile"))
             {
                 _displayHandler.OpenProfile(entry);
                 ImGui.CloseCurrentPopup();
@@ -192,7 +199,7 @@ public class DrawUserPair : DrawPairBase
         }
         if (entry.IsVisible)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Sync, "Reload last data"))
+            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Sync, "Reload last data"))
             {
                 entry.ApplyLastReceivedData(forced: true);
                 ImGui.CloseCurrentPopup();
@@ -200,13 +207,13 @@ public class DrawUserPair : DrawPairBase
             UiSharedService.AttachToolTip("This reapplies the last received character data to this character");
         }
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "Cycle pause state"))
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.PlayCircle, "Cycle pause state"))
         {
             _ = _apiController.CyclePause(entry.UserData);
             ImGui.CloseCurrentPopup();
         }
         var entryUID = entry.UserData.AliasOrUID;
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Folder, "Pair Groups"))
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Folder, "Pair Groups"))
         {
             _selectGroupForPairUi.Open(entry);
         }
@@ -215,7 +222,7 @@ public class DrawUserPair : DrawPairBase
         var isDisableSounds = entry.UserPair!.OwnPermissions.IsDisableSounds();
         string disableSoundsText = isDisableSounds ? "Enable sound sync" : "Disable sound sync";
         var disableSoundsIcon = isDisableSounds ? FontAwesomeIcon.VolumeUp : FontAwesomeIcon.VolumeMute;
-        if (UiSharedService.IconTextButton(disableSoundsIcon, disableSoundsText))
+        if (UiSharedService.NormalizedIconTextButton(disableSoundsIcon, disableSoundsText))
         {
             var permissions = entry.UserPair.OwnPermissions;
             permissions.SetDisableSounds(!isDisableSounds);
@@ -225,7 +232,7 @@ public class DrawUserPair : DrawPairBase
         var isDisableAnims = entry.UserPair!.OwnPermissions.IsDisableAnimations();
         string disableAnimsText = isDisableAnims ? "Enable animation sync" : "Disable animation sync";
         var disableAnimsIcon = isDisableAnims ? FontAwesomeIcon.Running : FontAwesomeIcon.Stop;
-        if (UiSharedService.IconTextButton(disableAnimsIcon, disableAnimsText))
+        if (UiSharedService.NormalizedIconTextButton(disableAnimsIcon, disableAnimsText))
         {
             var permissions = entry.UserPair.OwnPermissions;
             permissions.SetDisableAnimations(!isDisableAnims);
@@ -235,14 +242,14 @@ public class DrawUserPair : DrawPairBase
         var isDisableVFX = entry.UserPair!.OwnPermissions.IsDisableVFX();
         string disableVFXText = isDisableVFX ? "Enable VFX sync" : "Disable VFX sync";
         var disableVFXIcon = isDisableVFX ? FontAwesomeIcon.Sun : FontAwesomeIcon.Circle;
-        if (UiSharedService.IconTextButton(disableVFXIcon, disableVFXText))
+        if (UiSharedService.NormalizedIconTextButton(disableVFXIcon, disableVFXText))
         {
             var permissions = entry.UserPair.OwnPermissions;
             permissions.SetDisableVFX(!isDisableVFX);
             _ = _apiController.UserSetPairPermissions(new UserPermissionsDto(entry.UserData, permissions));
         }
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Unpair Permanently") && UiSharedService.CtrlPressed())
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Trash, "Unpair Permanently") && UiSharedService.CtrlPressed())
         {
             _ = _apiController.UserRemovePair(new(entry.UserData));
         }
@@ -251,7 +258,7 @@ public class DrawUserPair : DrawPairBase
         ImGui.Separator();
         if (!entry.IsPaused)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
+            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
             {
                 ImGui.CloseCurrentPopup();
                 _mediator.Publish(new OpenReportPopupMessage(_pair));

@@ -15,11 +15,10 @@ namespace MareSynchronos.Services.Mediator;
 public record SwitchToIntroUiMessage : MessageBase;
 public record SwitchToMainUiMessage : MessageBase;
 public record OpenSettingsUiMessage : MessageBase;
-public record OpenDataAnalysisUiMessage : MessageBase;
 public record DalamudLoginMessage : MessageBase;
 public record DalamudLogoutMessage : MessageBase;
 public record FrameworkUpdateMessage : SameThreadMessage;
-public record ClassJobChangedMessage(uint? ClassJob) : MessageBase;
+public record ClassJobChangedMessage(GameObjectHandler gameObjectHandler) : MessageBase;
 public record DelayedFrameworkUpdateMessage : SameThreadMessage;
 public record ZoneSwitchStartMessage : MessageBase;
 public record ZoneSwitchEndMessage : MessageBase;
@@ -55,9 +54,9 @@ public record CharacterDataCreatedMessage(CharacterData CharacterData) : SameThr
 public record CharacterDataAnalyzedMessage : MessageBase;
 public record PenumbraStartRedrawMessage(IntPtr Address) : MessageBase;
 public record PenumbraEndRedrawMessage(IntPtr Address) : MessageBase;
-public record HubReconnectingMessage(Exception? Exception) : MessageBase;
-public record HubReconnectedMessage(string? Arg) : MessageBase;
-public record HubClosedMessage(Exception? Exception) : MessageBase;
+public record HubReconnectingMessage(Exception? Exception) : SameThreadMessage;
+public record HubReconnectedMessage(string? Arg) : SameThreadMessage;
+public record HubClosedMessage(Exception? Exception) : SameThreadMessage;
 public record DownloadReadyMessage(Guid RequestId) : MessageBase;
 public record DownloadStartedMessage(GameObjectHandler DownloadId, Dictionary<string, FileDownloadStatus> DownloadStatus) : MessageBase;
 public record DownloadFinishedMessage(GameObjectHandler DownloadId) : MessageBase;
@@ -72,9 +71,10 @@ public record RemoveWindowMessage(WindowMediatorSubscriberBase Window) : Message
 public record PairHandlerVisibleMessage(PairHandler Player) : MessageBase;
 public record OpenReportPopupMessage(Pair PairToReport) : MessageBase;
 public record OpenBanUserPopupMessage(Pair PairToBan, GroupFullInfoDto GroupFullInfoDto) : MessageBase;
-public record JoinSyncshellPopupMessage() : MessageBase;
-public record OpenCreateSyncshellPopupMessage() : MessageBase;
-public record OpenSyncshellAdminPanelPopupMessage(GroupFullInfoDto GroupInfo) : MessageBase;
+public record OpenSyncshellAdminPanel(GroupFullInfoDto GroupInfo) : MessageBase;
+public record OpenPermissionWindow(Pair Pair) : MessageBase;
+public record DownloadLimitChangedMessage() : SameThreadMessage;
+public record CensusUpdateMessage(byte Gender, byte RaceId, byte TribeId) : MessageBase;
 
 #pragma warning restore S2094
 #pragma warning restore MA0048 // File name must match type name

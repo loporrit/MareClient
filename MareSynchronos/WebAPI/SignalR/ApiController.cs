@@ -2,6 +2,7 @@
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Extensions;
 using MareSynchronos.API.Dto;
+using MareSynchronos.API.Dto.User;
 using MareSynchronos.API.SignalR;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services;
@@ -33,6 +34,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
     private bool _initialized;
     private HubConnection? _mareHub;
     private ServerState _serverState;
+    private CensusUpdateMessage? _lastCensus;
 
     public ApiController(ILogger<ApiController> logger, HubFactory hubFactory, DalamudUtilService dalamudUtil,
         PairManager pairManager, ServerConfigurationManager serverManager, MareMediator mediator,
@@ -48,9 +50,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         Mediator.Subscribe<DalamudLoginMessage>(this, (_) => DalamudUtilOnLogIn());
         Mediator.Subscribe<DalamudLogoutMessage>(this, (_) => DalamudUtilOnLogOut());
         Mediator.Subscribe<HubClosedMessage>(this, (msg) => MareHubOnClosed(msg.Exception));
-        Mediator.Subscribe<HubReconnectedMessage>(this, (msg) => _ = Task.Run(MareHubOnReconnected));
+        Mediator.Subscribe<HubReconnectedMessage>(this, async (msg) => await MareHubOnReconnected().ConfigureAwait(false));
         Mediator.Subscribe<HubReconnectingMessage>(this, (msg) => MareHubOnReconnecting(msg.Exception));
         Mediator.Subscribe<CyclePauseMessage>(this, (msg) => _ = CyclePause(msg.UserData));
+        Mediator.Subscribe<CensusUpdateMessage>(this, (msg) => _lastCensus = msg);
 
         ServerState = ServerState.Offline;
 
@@ -185,7 +188,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
                         $"Your client is outdated ({currentClientVer.Major}.{currentClientVer.Minor}.{currentClientVer.Build}), current is: " +
                         $"{_connectionDto.CurrentClientVersion.Major}.{_connectionDto.CurrentClientVersion.Minor}.{_connectionDto.CurrentClientVersion.Build}. " +
                         $"Please keep your Mare Synchronos client up-to-date.",
-                        Dalamud.Interface.Internal.Notifications.NotificationType.Error));
+                        Dalamud.Interface.Internal.Notifications.NotificationType.Warning));
                 }
 
                 await LoadIninitialPairs().ConfigureAwait(false);
@@ -209,6 +212,12 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
                 ServerState = ServerState.Reconnecting;
                 Logger.LogInformation("Failed to establish connection, retrying");
                 await Task.Delay(TimeSpan.FromSeconds(new Random().Next(5, 20)), token).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.LogWarning(ex, "InvalidOperationException on connection");
+                await StopConnection(ServerState.Disconnected).ConfigureAwait(false);
+                return;
             }
             catch (Exception ex)
             {
@@ -369,13 +378,13 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         try
         {
             InitializeApiHooks();
-            await LoadIninitialPairs().ConfigureAwait(false);
             _connectionDto = await GetConnectionDto().ConfigureAwait(false);
             if (_connectionDto.ServerVersion != IMareHub.ApiVersion)
             {
                 await StopConnection(ServerState.VersionMisMatch).ConfigureAwait(false);
                 return;
             }
+            await LoadIninitialPairs().ConfigureAwait(false);
             await LoadOnlinePairs().ConfigureAwait(false);
             ServerState = ServerState.Connected;
         }

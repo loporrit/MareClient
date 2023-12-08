@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services.ServerConfiguration;
@@ -38,9 +39,9 @@ public class UidDisplayHandler
         if (!string.Equals(_editNickEntry, pair.UserData.UID, StringComparison.Ordinal))
         {
             ImGui.SetCursorPosY(originalY);
-            if (textIsUid) ImGui.PushFont(UiBuilder.MonoFont);
-            ImGui.TextUnformatted(playerText);
-            if (textIsUid) ImGui.PopFont();
+
+            using (ImRaii.PushFont(UiBuilder.MonoFont, textIsUid)) ImGui.TextUnformatted(playerText);
+
             if (ImGui.IsItemHovered())
             {
                 if (!string.Equals(_lastMouseOverUid, id))

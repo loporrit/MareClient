@@ -18,7 +18,6 @@ namespace MareSynchronos.UI.Components;
 public class DrawGroupPair : DrawPairBase
 {
     protected readonly MareMediator _mediator;
-    private static string _banReason = string.Empty;
     private readonly GroupPairFullInfoDto _fullInfoDto;
     private readonly GroupFullInfoDto _group;
 
@@ -248,7 +247,7 @@ public class DrawGroupPair : DrawPairBase
             if ((userIsModerator || userIsOwner) && !(entryIsMod || entryIsOwner))
             {
                 var pinText = entryIsPinned ? "Unpin user" : "Pin user";
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Thumbtack, pinText))
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Thumbtack, pinText))
                 {
                     ImGui.CloseCurrentPopup();
                     var userInfo = _fullInfoDto.GroupPairStatusInfo ^ GroupUserInfo.IsPinned;
@@ -256,14 +255,14 @@ public class DrawGroupPair : DrawPairBase
                 }
                 UiSharedService.AttachToolTip("Pin this user to the Syncshell. Pinned users will not be deleted in case of a manually initiated Syncshell clean");
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Remove user") && UiSharedService.CtrlPressed())
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Trash, "Remove user") && UiSharedService.CtrlPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     _ = _apiController.GroupRemoveUser(_fullInfoDto);
                 }
 
                 UiSharedService.AttachToolTip("Hold CTRL and click to remove user " + (_pair.UserData.AliasOrUID) + " from Syncshell");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.UserSlash, "Ban User"))
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.UserSlash, "Ban User"))
                 {
                     ImGui.CloseCurrentPopup();
                     _mediator.Publish(new OpenBanUserPopupMessage(_pair, _group));
@@ -274,7 +273,7 @@ public class DrawGroupPair : DrawPairBase
             if (userIsOwner)
             {
                 string modText = entryIsMod ? "Demod user" : "Mod user";
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.UserShield, modText) && UiSharedService.CtrlPressed())
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.UserShield, modText) && UiSharedService.CtrlPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     var userInfo = _fullInfoDto.GroupPairStatusInfo ^ GroupUserInfo.IsModerator;
@@ -282,7 +281,7 @@ public class DrawGroupPair : DrawPairBase
                 }
                 UiSharedService.AttachToolTip("Hold CTRL to change the moderator status for " + (_fullInfoDto.UserAliasOrUID) + Environment.NewLine +
                     "Moderators can kick, ban/unban, pin/unpin users and clear the Syncshell.");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Crown, "Transfer Ownership") && UiSharedService.CtrlPressed() && UiSharedService.ShiftPressed())
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Crown, "Transfer Ownership") && UiSharedService.CtrlPressed() && UiSharedService.ShiftPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     _ = _apiController.GroupChangeOwnership(_fullInfoDto);
@@ -293,13 +292,13 @@ public class DrawGroupPair : DrawPairBase
             ImGui.Separator();
             if (!_pair.IsPaused)
             {
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Open Profile"))
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.User, "Open Profile"))
                 {
                     _displayHandler.OpenProfile(_pair);
                     ImGui.CloseCurrentPopup();
                 }
                 UiSharedService.AttachToolTip("Opens the profile for this user in a new window");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
                 {
                     ImGui.CloseCurrentPopup();
                     _mediator.Publish(new OpenReportPopupMessage(_pair));

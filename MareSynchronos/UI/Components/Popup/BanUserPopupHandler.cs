@@ -27,7 +27,7 @@ public class BanUserPopupHandler : IPopupHandler
         UiSharedService.TextWrapped("User " + (_reportedPair.UserData.AliasOrUID) + " will be banned and removed from this Syncshell.");
         ImGui.InputTextWithHint("##banreason", "Ban Reason", ref _banReason, 255);
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.UserSlash, "Ban User"))
+        if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.UserSlash, "Ban User"))
         {
             ImGui.CloseCurrentPopup();
             var reason = _banReason;
@@ -35,6 +35,10 @@ public class BanUserPopupHandler : IPopupHandler
             _banReason = string.Empty;
         }
         UiSharedService.TextWrapped("The reason will be displayed in the banlist. The current server-side alias if present (Vanity ID) will automatically be attached to the reason.");
+    }
+
+    public void OnClose()
+    {
     }
 
     public void Open(OpenBanUserPopupMessage message)
