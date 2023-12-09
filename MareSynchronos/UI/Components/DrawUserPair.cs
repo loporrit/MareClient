@@ -66,13 +66,18 @@ public class DrawUserPair : DrawPairBase
             ImGui.SetCursorPosY(textPosY);
             ImGui.PushFont(UiBuilder.IconFont);
             UiSharedService.ColorText(FontAwesomeIcon.Eye.ToIconString(), ImGuiColors.ParsedGreen);
+            if (ImGui.IsItemClicked())
+            {
+                _mediator.Publish(new TargetPairMessage(_pair));
+            }
             ImGui.PopFont();
-            var visibleTooltip = _pair.UserData.AliasOrUID + " is visible: " + _pair.PlayerName!;
+            var visibleTooltip = _pair.UserData.AliasOrUID + " is visible: " + _pair.PlayerName! + Environment.NewLine + "Click to target this player";
             if (_pair.LastAppliedDataSize >= 0)
             {
                 visibleTooltip += UiSharedService.TooltipSeparator +
                     "Loaded Mods Size: " + UiSharedService.ByteToString(_pair.LastAppliedDataSize, true);
             }
+
             UiSharedService.AttachToolTip(visibleTooltip);
         }
     }
