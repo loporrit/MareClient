@@ -61,13 +61,25 @@ public class DrawGroupPair : DrawPairBase
         }
 
         if (_pair.IsOnline && !_pair.IsVisible) presenceText = entryUID + " is online";
-        else if (_pair.IsOnline && _pair.IsVisible) presenceText = entryUID + " is visible: " + _pair.PlayerName;
+        else if (_pair.IsOnline && _pair.IsVisible) presenceText = entryUID + " is visible: " + _pair.PlayerName + Environment.NewLine + "Click to target this player";
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(textPosY);
         ImGui.PushFont(UiBuilder.IconFont);
         UiSharedService.ColorText(presenceIcon.ToIconString(), presenceColor);
         ImGui.PopFont();
+        if (_pair.IsVisible)
+        {
+            if (ImGui.IsItemClicked())
+            {
+                _mediator.Publish(new TargetPairMessage(_pair));
+            }
+            if (_pair.LastAppliedDataSize >= 0)
+            {
+                presenceText += UiSharedService.TooltipSeparator +
+                    "Loaded Mods Size: " + UiSharedService.ByteToString(_pair.LastAppliedDataSize, true);
+            }
+        }
         UiSharedService.AttachToolTip(presenceText);
 
         if (entryIsOwner)
