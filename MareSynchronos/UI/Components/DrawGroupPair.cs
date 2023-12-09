@@ -201,7 +201,7 @@ public class DrawGroupPair : DrawPairBase
             {
                 ImGui.BeginTooltip();
 
-                ImGui.Text("Sycnshell User permissions");
+                ImGui.Text("Syncshell User permissions");
 
                 if (soundsDisabled)
                 {
