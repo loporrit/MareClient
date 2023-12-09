@@ -111,11 +111,13 @@ public class SyncshellAdminUI : WindowMediatorSubscriberBase
             var mgmtTab = ImRaii.TabItem("User Management");
             if (mgmtTab)
             {
-                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Broom, "Clear Syncshell"))
+                using (ImRaii.Disabled(!UiSharedService.CtrlPressed()))
+                if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Broom, "Clear Syncshell") && UiSharedService.CtrlPressed())
                 {
                     _ = _apiController.GroupClear(new(GroupFullInfo.Group));
                 }
-                UiSharedService.AttachToolTip("This will remove all non-pinned, non-moderator users from the Syncshell");
+                UiSharedService.AttachToolTip("Hold CTRL and click to clear this Syncshell." + Environment.NewLine + "WARNING: this action is irreversible." + Environment.NewLine
+                    + "This will remove all non-pinned, non-moderator users from the Syncshell");
 
                 ImGuiHelpers.ScaledDummy(2f);
 
