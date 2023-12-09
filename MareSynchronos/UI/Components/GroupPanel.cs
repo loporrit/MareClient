@@ -489,7 +489,7 @@ internal sealed class GroupPanel
         var userSoundsIcon = userSoundsDisabled ? FontAwesomeIcon.VolumeOff : FontAwesomeIcon.VolumeUp;
         var userVFXIcon = userVFXDisabled ? FontAwesomeIcon.Circle : FontAwesomeIcon.Sun;
 
-        var iconSize = UiSharedService.GetIconButtonSize(infoIcon);
+        var iconSize = UiSharedService.GetIconSize(infoIcon);
         var diffLockUnlockIcons = showInfoIcon ? (UiSharedService.GetIconButtonSize(infoIcon).X - iconSize.X) / 2 : 0;
         var barbuttonSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Bars);
         var isOwner = string.Equals(groupDto.OwnerUID, ApiController.UID, StringComparison.Ordinal);
