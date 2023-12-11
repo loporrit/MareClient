@@ -31,7 +31,7 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
 
     public PopoutProfileUi(ILogger<PopoutProfileUi> logger, MareMediator mediator, UiSharedService uiBuilder,
         ServerConfigurationManager serverManager, MareConfigService mareConfigService,
-        MareProfileManager mareProfileManager, PairManager pairManager) : base(logger, mediator, "###MareSynchronosPopoutProfileUI")
+        MareProfileManager mareProfileManager, PairManager pairManager) : base(logger, mediator, "###LoporritSyncPopoutProfileUI")
     {
         _uiSharedService = uiBuilder;
         _serverManager = serverManager;
@@ -111,8 +111,8 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
             var rectMin = drawList.GetClipRectMin();
             var rectMax = drawList.GetClipRectMax();
 
-            using (ImRaii.PushFont(_uiSharedService.UidFont, _uiSharedService.UidFontBuilt)) 
-                UiSharedService.ColorText(_pair.UserData.AliasOrUID, ImGuiColors.HealerGreen);
+            using (ImRaii.PushFont(_uiSharedService.UidFont, _uiSharedService.UidFontBuilt))
+                UiSharedService.ColorText(_pair.UserData.AliasOrUID, UiSharedService.AccentColor);
 
             ImGuiHelpers.ScaledDummy(spacing.Y, spacing.Y);
             var textPos = ImGui.GetCursorPosY();

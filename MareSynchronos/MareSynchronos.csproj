@@ -18,6 +18,7 @@
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockfileAssemblies>true</CopyLocalLockfileAssemblies>
+    <AssemblyName>LoporritSync</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup>

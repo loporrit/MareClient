@@ -28,7 +28,7 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
 
     public StandaloneProfileUi(ILogger<StandaloneProfileUi> logger, MareMediator mediator, UiSharedService uiBuilder,
         ServerConfigurationManager serverManager, MareProfileManager mareProfileManager, PairManager pairManager, Pair pair)
-        : base(logger, mediator, "Mare Profile of " + pair.UserData.AliasOrUID + "##MareSynchronosStandaloneProfileUI" + pair.UserData.AliasOrUID)
+        : base(logger, mediator, "Profile of " + pair.UserData.AliasOrUID + "##LoporritSyncStandaloneProfileUI" + pair.UserData.AliasOrUID)
     {
         _uiSharedService = uiBuilder;
         _serverManager = serverManager;
@@ -78,7 +78,7 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
             var headerSize = ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y;
 
             using (ImRaii.PushFont(_uiSharedService.UidFont, _uiSharedService.UidFontBuilt))
-                UiSharedService.ColorText(Pair.UserData.AliasOrUID, ImGuiColors.HealerGreen);
+                UiSharedService.ColorText(Pair.UserData.AliasOrUID, UiSharedService.AccentColor);
 
             ImGuiHelpers.ScaledDummy(new Vector2(spacing.Y, spacing.Y));
             var textPos = ImGui.GetCursorPosY() - headerSize;

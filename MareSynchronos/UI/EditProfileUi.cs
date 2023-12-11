@@ -9,6 +9,7 @@ using MareSynchronos.API.Data;
 using MareSynchronos.API.Dto.User;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
 
@@ -21,6 +22,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
     private readonly MareProfileManager _mareProfileManager;
     private readonly UiBuilder _uiBuilder;
     private readonly UiSharedService _uiSharedService;
+    private readonly ServerConfigurationManager _serverConfigurationManager;
     private bool _adjustedForScollBarsLocalProfile = false;
     private bool _adjustedForScollBarsOnlineProfile = false;
     private string _descriptionText = string.Empty;
@@ -32,7 +34,8 @@ public class EditProfileUi : WindowMediatorSubscriberBase
 
     public EditProfileUi(ILogger<EditProfileUi> logger, MareMediator mediator,
         ApiController apiController, UiBuilder uiBuilder, UiSharedService uiSharedService,
-        FileDialogManager fileDialogManager, MareProfileManager mareProfileManager) : base(logger, mediator, "Mare Synchronos Edit Profile###MareSynchronosEditProfileUI")
+        FileDialogManager fileDialogManager, ServerConfigurationManager serverConfigurationManager,
+        MareProfileManager mareProfileManager) : base(logger, mediator, "Loporrit Edit Profile###LoporritSyncEditProfileUI")
     {
         IsOpen = false;
         this.SizeConstraints = new()
@@ -44,6 +47,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
         _uiBuilder = uiBuilder;
         _uiSharedService = uiSharedService;
         _fileDialogManager = fileDialogManager;
+        _serverConfigurationManager = serverConfigurationManager;
         _mareProfileManager = mareProfileManager;
 
         Mediator.Subscribe<GposeStartMessage>(this, (_) => { _wasOpen = IsOpen; IsOpen = false; });
@@ -118,16 +122,20 @@ public class EditProfileUi : WindowMediatorSubscriberBase
         ImGui.Checkbox("Is NSFW", ref nsfw);
         ImGui.EndDisabled();
 
-        ImGui.Separator();
-        _uiSharedService.BigText("Notes and Rules for Profiles");
+        if (_serverConfigurationManager.CurrentApiUrl == ApiController.MainServiceUri)
+        {
+            ImGui.Separator();
+            _uiSharedService.BigText("Notes and Rules for Profiles");
 
-        ImGui.TextWrapped($"- All users that are paired and unpaused with you will be able to see your profile picture and description.{Environment.NewLine}" +
-            $"- Other users have the possibility to report your profile for breaking the rules.{Environment.NewLine}" +
-            $"- !!! AVOID: anything as profile image that can be considered highly illegal or obscene (bestiality, anything that could be considered a sexual act with a minor (that includes Lalafells), etc.){Environment.NewLine}" +
-            $"- !!! AVOID: slurs of any kind in the description that can be considered highly offensive{Environment.NewLine}" +
-            $"- In case of valid reports from other users this can lead to disabling your profile forever or terminating your Mare account indefinitely.{Environment.NewLine}" +
-            $"- Judgement of your profile validity from reports through staff is not up to debate and the decisions to disable your profile/account permanent.{Environment.NewLine}" +
-            $"- If your profile picture or profile description could be considered NSFW, enable the toggle below.");
+            ImGui.TextWrapped($"- All users that are paired and unpaused with you will be able to see your profile picture and description.{Environment.NewLine}" +
+                $"- Other users have the possibility to report your profile for breaking the rules.{Environment.NewLine}" +
+                $"- !!! AVOID: anything as profile image that can be considered highly illegal or obscene (bestiality, anything that could be considered a sexual act with a minor (that includes Lalafells), etc.){Environment.NewLine}" +
+                $"- !!! AVOID: slurs of any kind in the description that can be considered highly offensive{Environment.NewLine}" +
+                $"- In case of valid reports from other users this can lead to disabling your profile forever or terminating your Mare account indefinitely.{Environment.NewLine}" +
+                $"- Judgement of your profile validity from reports through staff is not up to debate and the decisions to disable your profile/account permanent.{Environment.NewLine}" +
+                $"- If your profile picture or profile description could be considered NSFW, enable the toggle below.");
+        }
+
         ImGui.Separator();
         _uiSharedService.BigText("Profile Settings");
 

@@ -29,15 +29,14 @@ internal class ReportPopupHandler : IPopupHandler
     public void DrawContent()
     {
         using (ImRaii.PushFont(_uiSharedService.UidFont))
-            UiSharedService.TextWrapped("Report " + _reportedPair!.UserData.AliasOrUID + " Mare Profile");
+            UiSharedService.TextWrapped("Report " + _reportedPair!.UserData.AliasOrUID + " Profile");
 
         ImGui.InputTextMultiline("##reportReason", ref _reportReason, 500, new Vector2(500 - ImGui.GetStyle().ItemSpacing.X * 2, 200));
         UiSharedService.TextWrapped($"Note: Sending a report will disable the offending profile globally.{Environment.NewLine}" +
-            $"The report will be sent to the team of your currently connected Mare Synchronos Service.{Environment.NewLine}" +
-            $"The report will include your user and your contact info (Discord User).{Environment.NewLine}" +
-            $"Depending on the severity of the offense the users Mare profile or account can be permanently disabled or banned.");
+            $"The report will be sent to the team of your currently connected server.{Environment.NewLine}" +
+            $"Depending on the severity of the offense the users profile or account can be permanently disabled or banned.");
         UiSharedService.ColorTextWrapped("Report spam and wrong reports will not be tolerated and can lead to permanent account suspension.", ImGuiColors.DalamudRed);
-        UiSharedService.ColorTextWrapped("This is not for reporting misbehavior or Mare usage but solely for the actual profile. " +
+        UiSharedService.ColorTextWrapped("This is not for reporting misbehavior but solely for the actual profile. " +
             "Reports that are not solely for the profile will be ignored.", ImGuiColors.DalamudYellow);
 
         using (ImRaii.Disabled(string.IsNullOrEmpty(_reportReason)))

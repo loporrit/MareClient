@@ -88,7 +88,7 @@ public class MarePlugin : MediatorSubscriberBase, IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version!;
-        Logger.LogInformation("Launching {name} {major}.{minor}.{build}", "Mare Synchronos", version.Major, version.Minor, version.Build);
+        Logger.LogInformation("Launching {name} {major}.{minor}.{build}-lop{rev}", "Loporrit Sync", version.Major, version.Minor, version.Build, version.Revision);
 
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (msg) => _ = Task.Run(WaitForPlayerAndLaunchCharacterManager));
         Mediator.Subscribe<DalamudLoginMessage>(this, (_) => DalamudUtilOnLogIn());
@@ -152,7 +152,7 @@ public class MarePlugin : MediatorSubscriberBase, IHostedService
             if (_mareConfigService.Current.LogLevel != LogLevel.Information)
             {
                 Mediator.Publish(new NotificationMessage("Abnormal Log Level",
-                    $"Your log level is set to '{_mareConfigService.Current.LogLevel}' which is not recommended for normal usage. Set it to '{LogLevel.Information}' in \"Mare Settings -> Debug\" unless instructed otherwise.",
+                    $"Your log level is set to '{_mareConfigService.Current.LogLevel}' which is not recommended for normal usage. Set it to '{LogLevel.Information}' in \"Loporrit Settings -> Debug\" unless instructed otherwise.",
                     Dalamud.Interface.Internal.Notifications.NotificationType.Error, 15000));
             }
 #endif

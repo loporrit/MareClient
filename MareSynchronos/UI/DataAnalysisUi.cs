@@ -98,7 +98,7 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
             _hasUpdate = false;
         }
 
-        UiSharedService.TextWrapped("This window shows you all files and their sizes that are currently in use through your character and associated entities in Mare");
+        UiSharedService.TextWrapped("This window shows you all files and their sizes that are currently in use through your character and associated entities");
 
         if (_cachedAnalysis!.Count == 0) return;
 
@@ -333,7 +333,7 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
 
     private void DrawTable(IGrouping<string, CharacterAnalyzer.FileDataEntry> fileGroup)
     {
-        using var table = ImRaii.Table("Analysis", string.Equals(fileGroup.Key, "tex", StringComparison.Ordinal) ? 
+        using var table = ImRaii.Table("Analysis", string.Equals(fileGroup.Key, "tex", StringComparison.Ordinal) ?
             (_enableBc7ConversionMode ? 7 : 6) : 5, ImGuiTableFlags.Sortable | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
             new Vector2(0, 300));
         if (!table.Success) return;

@@ -534,7 +534,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         return await _dalamudUtil.RunOnFrameworkThread(() =>
         {
-            var collName = "Mare_" + uid;
+            var collName = "Loporrit_" + uid;
             var retCreate = _penumbraCreateNamedTemporaryCollection.Invoke(collName);
             logger.LogTrace("Creating Temp Collection {collName}, Success: {ret}", collName, retCreate);
             return collName;
@@ -682,7 +682,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (!apiAvailable && !_shownGlamourerUnavailable)
             {
                 _shownGlamourerUnavailable = true;
-                Mediator.Publish(new NotificationMessage("Glamourer inactive", "Your Glamourer installation is not active or out of date. Update Glamourer to continue to use Mare.", NotificationType.Error));
+                Mediator.Publish(new NotificationMessage("Glamourer inactive", "Your Glamourer installation is not active or out of date. Update Glamourer to continue to use Loporrit.", NotificationType.Error));
             }
         }
     }
@@ -744,7 +744,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (!penumbraAvailable && !_shownPenumbraUnavailable)
             {
                 _shownPenumbraUnavailable = true;
-                Mediator.Publish(new NotificationMessage("Penumbra inactive", "Your Penumbra installation is not active or out of date. Update Penumbra and/or the Enable Mods setting in Penumbra to continue to use Mare.", NotificationType.Error));
+                Mediator.Publish(new NotificationMessage("Penumbra inactive", "Your Penumbra installation is not active or out of date. Update Penumbra and/or the Enable Mods setting in Penumbra to continue to use Loporrit.", NotificationType.Error));
             }
         }
     }

@@ -25,7 +25,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos;
+using MareSynchronos;
+
+namespace LoporritSync;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -46,7 +48,7 @@ public sealed class Plugin : IDalamudPlugin
         })
         .ConfigureServices(collection =>
         {
-            collection.AddSingleton(new WindowSystem("MareSynchronos"));
+            collection.AddSingleton(new WindowSystem("LoporritSync"));
             collection.AddSingleton<FileDialogManager>();
             collection.AddSingleton(new Dalamud.Localization("MareSynchronos.Localization.", "", useEmbedded: true));
 
@@ -103,7 +105,7 @@ public sealed class Plugin : IDalamudPlugin
 
             collection.AddScoped<WindowMediatorSubscriberBase, EditProfileUi>((s) => new EditProfileUi(s.GetRequiredService<ILogger<EditProfileUi>>(),
                 s.GetRequiredService<MareMediator>(), s.GetRequiredService<ApiController>(), pluginInterface.UiBuilder, s.GetRequiredService<UiSharedService>(),
-                s.GetRequiredService<FileDialogManager>(), s.GetRequiredService<MareProfileManager>()));
+                s.GetRequiredService<FileDialogManager>(), s.GetRequiredService<ServerConfigurationManager>(), s.GetRequiredService<MareProfileManager>()));
             collection.AddScoped<WindowMediatorSubscriberBase, PopupHandler>();
             collection.AddScoped<IPopupHandler, ReportPopupHandler>();
             collection.AddScoped<IPopupHandler, BanUserPopupHandler>();

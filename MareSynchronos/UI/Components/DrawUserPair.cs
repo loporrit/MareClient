@@ -263,12 +263,12 @@ public class DrawUserPair : DrawPairBase
         ImGui.Separator();
         if (!entry.IsPaused)
         {
-            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
+            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Profile"))
             {
                 ImGui.CloseCurrentPopup();
                 _mediator.Publish(new OpenReportPopupMessage(_pair));
             }
-            UiSharedService.AttachToolTip("Report this users Mare Profile to the administrative team");
+            UiSharedService.AttachToolTip("Report this users profile to the administrative team");
         }
     }
 }

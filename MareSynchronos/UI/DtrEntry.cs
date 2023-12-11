@@ -79,7 +79,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
     private DtrBarEntry CreateEntry()
     {
         _logger.LogTrace("Creating new DtrBar entry");
-        var entry = _dtrBar.Get("Mare Synchronos");
+        var entry = _dtrBar.Get("Loporrit");
         entry.OnClick = () => _mareMediator.Publish(new UiToggleMessage(typeof(CompactUi)));
 
         return entry;
@@ -135,18 +135,18 @@ public sealed class DtrEntry : IDisposable, IHostedService
                         .Where(x => x.IsVisible)
                         .Select(x => string.Format("{0}", _configService.Current.PreferNoteInDtrTooltip ? x.GetNote() ?? x.PlayerName : x.PlayerName));
                 }
-                
-                tooltip = $"Mare Synchronos: Connected{Environment.NewLine}----------{Environment.NewLine}{string.Join(Environment.NewLine, visiblePairs)}";
+
+                tooltip = $"Loporrit: Connected{Environment.NewLine}----------{Environment.NewLine}{string.Join(Environment.NewLine, visiblePairs)}";
             }
             else
             {
-                tooltip = "Mare Synchronos: Connected";
+                tooltip = "Loporrit: Connected";
             }
         }
         else
         {
             text = "\uE044 \uE04C";
-            tooltip = "Mare Synchronos: Not Connected";
+            tooltip = "Loporrit: Not Connected";
         }
 
         if (!string.Equals(text, _text, StringComparison.Ordinal))
