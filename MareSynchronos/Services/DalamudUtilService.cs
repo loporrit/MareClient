@@ -291,7 +291,10 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _framework.Update += FrameworkOnUpdate;
+#pragma warning disable S2696 // Instance members should not write to "static" fields
+        LoporritSync.Plugin.Self._realOnFrameworkUpdate = this.FrameworkOnUpdate;
+#pragma warning restore S2696
+        _framework.Update += LoporritSync.Plugin.Self.OnFrameworkUpdate;
         if (IsLoggedIn)
         {
             _classJobId = _clientState.LocalPlayer!.ClassJob.Id;
@@ -305,7 +308,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _logger.LogTrace("Stopping {type}", GetType());
 
         Mediator.UnsubscribeAll(this);
-        _framework.Update -= FrameworkOnUpdate;
+        _framework.Update -= LoporritSync.Plugin.Self.OnFrameworkUpdate;
         return Task.CompletedTask;
     }
 

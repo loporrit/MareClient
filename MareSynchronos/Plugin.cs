@@ -34,10 +34,21 @@ public sealed class Plugin : IDalamudPlugin
     private readonly CancellationTokenSource _pluginCts = new();
     private readonly Task _hostBuilderRunTask;
 
+    public static Plugin Self;
+    public Action<IFramework> _realOnFrameworkUpdate = null;
+
+    // Proxy function in the LoporritSync namespace to avoid confusion in /xlstats
+    public void OnFrameworkUpdate(IFramework framework)
+    {
+        if (_realOnFrameworkUpdate != null)
+            _realOnFrameworkUpdate(framework);
+    }
+
     public Plugin(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IDataManager gameData,
         IFramework framework, IObjectTable objectTable, IClientState clientState, ICondition condition, IChatGui chatGui,
         IGameGui gameGui, IDtrBar dtrBar, IPluginLog pluginLog, ITargetManager targetManager)
     {
+        Plugin.Self = this;
         _hostBuilderRunTask = new HostBuilder()
         .UseContentRoot(pluginInterface.ConfigDirectory.FullName)
         .ConfigureLogging(lb =>
