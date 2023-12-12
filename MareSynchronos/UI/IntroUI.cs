@@ -114,7 +114,7 @@ public class IntroUi : WindowMediatorSubscriberBase
             ImGui.TextUnformatted(Strings.ToS.LanguageLabel);
             ImGui.SameLine();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + textSize.Y / 2 - (languageSize.Y + ImGui.GetStyle().FramePadding.Y) / 2);
-            ImGui.SetNextItemWidth(80);
+            ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
             if (ImGui.Combo("", ref _currentLanguage, _languages.Keys.ToArray(), _languages.Count))
             {
                 GetToSLocalization(_currentLanguage);

@@ -167,7 +167,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("Global Download Speed Limit");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100);
+        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("###speedlimit", ref downloadSpeedLimit))
         {
             _configService.Current.DownloadSpeedLimitInBytes = downloadSpeedLimit;
@@ -175,7 +175,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             Mediator.Publish(new DownloadLimitChangedMessage());
         }
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100);
+        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
         _uiShared.DrawCombo("###speed", new[] { DownloadSpeeds.Bps, DownloadSpeeds.KBps, DownloadSpeeds.MBps },
             (s) => s switch
             {
@@ -193,7 +193,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("0 = No limit/infinite");
 
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
         if (ImGui.SliderInt("Maximum Parallel Downloads", ref maxParallelDownloads, 1, 10))
         {
             _configService.Current.ParallelDownloads = maxParallelDownloads;
@@ -249,7 +249,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("Shows download text (amount of MiB downloaded) in the transfer bars");
         int transferBarWidth = _configService.Current.TransferBarsWidth;
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(500 * ImGuiHelpers.GlobalScale);
         if (ImGui.SliderInt("Transfer Bar Width", ref transferBarWidth, 10, 500))
         {
             _configService.Current.TransferBarsWidth = transferBarWidth;
@@ -257,7 +257,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("Width of the displayed transfer bars (will never be less wide than the displayed text)");
         int transferBarHeight = _configService.Current.TransferBarsHeight;
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(500 * ImGuiHelpers.GlobalScale);
         if (ImGui.SliderInt("Transfer Bar Height", ref transferBarHeight, 2, 50))
         {
             _configService.Current.TransferBarsHeight = transferBarHeight;
@@ -698,7 +698,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 _configService.Save();
             }
 
-            ImGui.SetNextItemWidth(250);
+            ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
             _uiShared.DrawCombo("Server Info Bar style", Enumerable.Range(0, DtrEntry.NumStyles), (i) => DtrEntry.RenderDtrStyle(i, "123"),
             (i) =>
             {
@@ -755,7 +755,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             Mediator.Publish(new CompactUiChange(Vector2.Zero, Vector2.Zero));
         }
         UiSharedService.DrawHelpText("Will show profiles on the right side of the main UI");
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
         if (ImGui.SliderFloat("Hover Delay", ref profileDelay, 1, 10))
         {
             _configService.Current.ProfileDelay = profileDelay;
@@ -780,7 +780,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var onlineNotifsNamedOnly = _configService.Current.ShowOnlineNotificationsOnlyForNamedPairs;
         UiSharedService.FontText("Notifications", _uiShared.UidFont);
 
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
         _uiShared.DrawCombo("Info Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
@@ -793,7 +793,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                       + Environment.NewLine + "'Toast' will show Warning toast notifications in the bottom right corner"
                       + Environment.NewLine + "'Both' will show chat as well as the toast notification");
 
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
         _uiShared.DrawCombo("Warning Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
@@ -806,7 +806,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                               + Environment.NewLine + "'Toast' will show Warning toast notifications in the bottom right corner"
                               + Environment.NewLine + "'Both' will show chat as well as the toast notification");
 
-        ImGui.SetNextItemWidth(250);
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
         _uiShared.DrawCombo("Error Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {

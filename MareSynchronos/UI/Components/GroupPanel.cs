@@ -141,7 +141,7 @@ internal sealed class GroupPanel
         if (ImGui.BeginPopupModal("Create Syncshell", ref _showModalCreateGroup, UiSharedService.PopupWindowFlags))
         {
             UiSharedService.TextWrapped("Press the button below to create a new Syncshell.");
-            ImGui.SetNextItemWidth(200);
+            ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
             if (ImGui.Button("Create Syncshell"))
             {
                 try
@@ -473,7 +473,6 @@ internal sealed class GroupPanel
         var userVFXIcon = userVFXDisabled ? FontAwesomeIcon.Circle : FontAwesomeIcon.Sun;
 
         var iconSize = UiSharedService.GetIconSize(infoIcon);
-        var diffLockUnlockIcons = showInfoIcon ? (UiSharedService.GetIconButtonSize(infoIcon).X - iconSize.X) / 2 : 0;
         var barbuttonSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Bars);
         var isOwner = string.Equals(groupDto.OwnerUID, ApiController.UID, StringComparison.Ordinal);
 
@@ -482,7 +481,7 @@ internal sealed class GroupPanel
         var pauseIcon = groupDto.GroupUserPermissions.IsPaused() ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause;
         var pauseIconSize = UiSharedService.GetIconButtonSize(pauseIcon);
 
-        ImGui.SameLine(windowEndX - barbuttonSize.X - (showInfoIcon ? iconSize.X : 0) - diffLockUnlockIcons - (showInfoIcon ? spacingX : 0) - pauseIconSize.X - spacingX);
+        ImGui.SameLine(windowEndX - barbuttonSize.X - (showInfoIcon ? iconSize.X : 0) - (showInfoIcon ? spacingX : 0) - pauseIconSize.X - spacingX);
 
         if (showInfoIcon)
         {
@@ -574,7 +573,6 @@ internal sealed class GroupPanel
         UiSharedService.AttachToolTip((groupDto.GroupUserPermissions.IsPaused() ? "Resume" : "Pause") + " pairing with all users in this Syncshell");
         ImGui.SameLine();
 
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + diffLockUnlockIcons);
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Bars))
         {
             ImGui.OpenPopup("ShellPopup");

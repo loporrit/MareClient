@@ -114,10 +114,7 @@ public class PairGroupsUi
         DrawName(tag, isSpecialTag, visibleInThisTag, usersInThisTag.Count(), otherUidsTaggedWithTag?.Count);
         if (!isSpecialTag)
         {
-            if (onlineUsers.Any() && onlineUsers.First() is DrawUserPair)
-            {
-                using (ImRaii.PushId($"group-{tag}-buttons")) DrawButtons(tag, allUsers.Cast<DrawUserPair>().Where(p => otherUidsTaggedWithTag!.Contains(p.UID)).ToList());
-            }
+            using (ImRaii.PushId($"group-{tag}-buttons")) DrawButtons(tag, allUsers.Cast<DrawUserPair>().Where(p => otherUidsTaggedWithTag!.Contains(p.UID)).ToList());
         }
 
         if (!_tagHandler.IsTagOpen(tag)) return;
