@@ -9,7 +9,7 @@ public class MareConfig : IMareConfiguration
     public bool AcceptedAgreement { get; set; } = false;
     public string CacheFolder { get; set; } = string.Empty;
     public bool DisableOptionalPluginWarnings { get; set; } = false;
-    public bool EnableDtrEntry { get; set; } = false;
+    public bool EnableDtrEntry { get; set; } = true;
     public int DtrStyle { get; set; } = 0;
     public bool ShowUidInDtrTooltip { get; set; } = true;
     public bool PreferNoteInDtrTooltip { get; set; } = false;
@@ -31,7 +31,7 @@ public class MareConfig : IMareConfiguration
     public float ProfileDelay { get; set; } = 1.5f;
     public bool ProfilePopoutRight { get; set; } = false;
     public bool ProfilesAllowNsfw { get; set; } = false;
-    public bool ProfilesShow { get; set; } = true;
+    public bool ProfilesShow { get; set; } = false;
     public bool ShowSyncshellUsersInVisible { get; set; } = true;
     public bool ShowCharacterNameInsteadOfNotesForVisible { get; set; } = false;
     public bool ShowOfflineUsersSeparately { get; set; } = true;
