@@ -458,13 +458,14 @@ public class CompactUi : WindowMediatorSubscriberBase
     private void DrawTransfers()
     {
         var currentUploads = _fileTransferManager.CurrentUploads.ToList();
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextUnformatted(FontAwesomeIcon.Upload.ToIconString());
-        ImGui.PopFont();
-        ImGui.SameLine(35 * ImGuiHelpers.GlobalScale);
 
         if (currentUploads.Any())
         {
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.TextUnformatted(FontAwesomeIcon.Upload.ToIconString());
+            ImGui.PopFont();
+            ImGui.SameLine(35 * ImGuiHelpers.GlobalScale);
+
             var totalUploads = currentUploads.Count;
 
             var doneUploads = currentUploads.Count(c => c.IsTransferred);
@@ -477,19 +478,16 @@ public class CompactUi : WindowMediatorSubscriberBase
             ImGui.SameLine(WindowContentWidth - textSize.X);
             ImGui.TextUnformatted(uploadText);
         }
-        else
-        {
-            ImGui.TextUnformatted("No uploads in progress");
-        }
 
         var currentDownloads = _currentDownloads.SelectMany(d => d.Value.Values).ToList();
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextUnformatted(FontAwesomeIcon.Download.ToIconString());
-        ImGui.PopFont();
-        ImGui.SameLine(35 * ImGuiHelpers.GlobalScale);
 
         if (currentDownloads.Any())
         {
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.TextUnformatted(FontAwesomeIcon.Download.ToIconString());
+            ImGui.PopFont();
+            ImGui.SameLine(35 * ImGuiHelpers.GlobalScale);
+
             var totalDownloads = currentDownloads.Sum(c => c.TotalFiles);
             var doneDownloads = currentDownloads.Sum(c => c.TransferredFiles);
             var totalDownloaded = currentDownloads.Sum(c => c.TransferredBytes);
@@ -501,10 +499,6 @@ public class CompactUi : WindowMediatorSubscriberBase
             var textSize = ImGui.CalcTextSize(downloadText);
             ImGui.SameLine(WindowContentWidth - textSize.X);
             ImGui.TextUnformatted(downloadText);
-        }
-        else
-        {
-            ImGui.TextUnformatted("No downloads in progress");
         }
 
         if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.PersonCircleQuestion, "Mare Character Data Analysis", WindowContentWidth))

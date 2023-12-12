@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using MareSynchronos.API.Data.Extensions;
@@ -115,6 +116,16 @@ public class PairGroupsUi
         if (!isSpecialTag)
         {
             using (ImRaii.PushId($"group-{tag}-buttons")) DrawButtons(tag, allUsers.Cast<DrawUserPair>().Where(p => otherUidsTaggedWithTag!.Contains(p.UID)).ToList());
+        }
+        else
+        {
+            // Avoid uncomfortably close group names
+            if (!_tagHandler.IsTagOpen(tag))
+            {
+                var size = ImGui.CalcTextSize("").Y + ImGui.GetStyle().FramePadding.Y * 2f;
+                ImGui.SameLine();
+                ImGui.Dummy(new(size, size));
+            }
         }
 
         if (!_tagHandler.IsTagOpen(tag)) return;
