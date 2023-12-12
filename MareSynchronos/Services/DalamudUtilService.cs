@@ -31,6 +31,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private readonly ICondition _condition;
     private readonly IFramework _framework;
     private readonly IGameGui _gameGui;
+    private readonly IToastGui _toastGui;
     private readonly ILogger<DalamudUtilService> _logger;
     private readonly IObjectTable _objectTable;
     private readonly PerformanceCollectorService _performanceCollector;
@@ -44,7 +45,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private static readonly Dictionary<uint, PlayerInfo> _playerInfoCache = new();
 
     public DalamudUtilService(ILogger<DalamudUtilService> logger, IClientState clientState, IObjectTable objectTable, IFramework framework,
-        IGameGui gameGui, ICondition condition, IDataManager gameData, ITargetManager targetManager,
+        IGameGui gameGui, IToastGui toastGui,ICondition condition, IDataManager gameData, ITargetManager targetManager,
         MareMediator mediator, PerformanceCollectorService performanceCollector)
     {
         _logger = logger;
@@ -52,6 +53,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _objectTable = objectTable;
         _framework = framework;
         _gameGui = gameGui;
+        _toastGui = toastGui;
         _condition = condition;
         Mediator = mediator;
         _performanceCollector = performanceCollector;
@@ -64,13 +66,17 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         mediator.Subscribe<TargetPairMessage>(this, async (msg) =>
         {
             if (clientState.IsPvP) return;
-            var name = msg.Pair.PlayerName;
-            if (string.IsNullOrEmpty(name)) return;
-            var addr = _playerCharas.FirstOrDefault(f => string.Equals(f.Value.Name, name, StringComparison.Ordinal)).Value.Address;
-            if (addr == nint.Zero) return;
+            var ident = msg.Pair.GetPlayerNameHash();
             await RunOnFrameworkThread(() =>
             {
-                targetManager.Target = CreateGameObject(addr);
+                var addr = GetPlayerCharacterFromCachedTableByIdent(ident);
+                var pc = GetPlayerCharacter();
+                var gobj = CreateGameObject(addr);
+                // Any further than roughly 55y is out of range for targetting
+                if (gobj != null && Vector3.Distance(pc.Position, gobj.Position) < 55.0f)
+                    targetManager.Target = gobj;
+                else
+                    _toastGui.ShowError("Player out of range.");
             }).ConfigureAwait(false);
         });
     }
@@ -458,17 +464,19 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         }
 
         IsAnythingDrawing = false;
-        _playerCharas.Clear();
+
+        var playerCharaList = new Dictionary<string, (string Name, nint Address)>(StringComparer.Ordinal);
         _performanceCollector.LogPerformance(this, "ObjTableToCharas",
             () => {
                 foreach (var p in _objectTable.OfType<PlayerCharacter>().Where(o => o.ObjectIndex < 200))
                 {
                     CheckCharacterForDrawing(p);
                     var info = GetPlayerInfo(p);
-                    _playerCharas.Add(info.Hash, (info.Name, p.Address));
+                    playerCharaList.Add(info.Hash, (info.Name, p.Address));
                 }
             }
         );
+        _playerCharas = playerCharaList;
 
         if (!IsAnythingDrawing && !string.IsNullOrEmpty(_lastGlobalBlockPlayer))
         {

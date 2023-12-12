@@ -193,6 +193,14 @@ public class DrawUserPair : DrawPairBase
 
     private void DrawPairedClientMenu(Pair entry)
     {
+        if (entry.IsVisible)
+        {
+            if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Eye, "Target player"))
+            {
+                _mediator.Publish(new TargetPairMessage(entry));
+                ImGui.CloseCurrentPopup();
+            }
+        }
         if (!entry.IsPaused)
         {
             if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.User, "Open Profile"))

@@ -46,7 +46,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IDataManager gameData,
         IFramework framework, IObjectTable objectTable, IClientState clientState, ICondition condition, IChatGui chatGui,
-        IGameGui gameGui, IDtrBar dtrBar, IPluginLog pluginLog, ITargetManager targetManager)
+        IGameGui gameGui, IDtrBar dtrBar, IToastGui toastGui, IPluginLog pluginLog, ITargetManager targetManager)
     {
         Plugin.Self = this;
         _hostBuilderRunTask = new HostBuilder()
@@ -88,7 +88,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<UidDisplayHandler>();
             collection.AddSingleton((s) => new DalamudContextMenu(pluginInterface));
             collection.AddSingleton((s) => new DalamudUtilService(s.GetRequiredService<ILogger<DalamudUtilService>>(),
-                clientState, objectTable, framework, gameGui, condition, gameData, targetManager,
+                clientState, objectTable, framework, gameGui, toastGui, condition, gameData, targetManager,
                 s.GetRequiredService<MareMediator>(), s.GetRequiredService<PerformanceCollectorService>()));
             collection.AddSingleton((s) => new DtrEntry(s.GetRequiredService<ILogger<DtrEntry>>(), dtrBar, s.GetRequiredService<MareConfigService>(),
                 s.GetRequiredService<MareMediator>(), s.GetRequiredService<PairManager>(), s.GetRequiredService<ApiController>()));
