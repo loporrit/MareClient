@@ -32,7 +32,7 @@ public class PairGroupsUi
         // Only render those tags that actually have pairs in them, otherwise
         // we can end up with a bunch of useless pair groups
         var tagsWithPairsInThem = _tagHandler.GetAllTagsSorted();
-        var allUsers = visibleUsers.Concat(onlineUsers).Concat(offlineUsers).ToList();
+        var allUsers = onlineUsers.Concat(offlineUsers).ToList();
         if (typeof(T) == typeof(DrawUserPair))
         {
             DrawUserPairs(tagsWithPairsInThem, allUsers.Cast<DrawUserPair>().ToList(), visibleUsers.Cast<DrawUserPair>(), onlineUsers.Cast<DrawUserPair>(), offlineUsers.Cast<DrawUserPair>());
@@ -210,7 +210,7 @@ public class PairGroupsUi
             }
             else
             {
-                using (ImRaii.PushId($"group-{tag}")) DrawCategory(tag, onlineUsers.Concat(offlineUsers).ToList(), allUsers, visibleUsers);
+                using (ImRaii.PushId($"group-{tag}")) DrawCategory(tag, allUsers, allUsers, visibleUsers);
             }
         }
         if (_mareConfig.Current.ShowOfflineUsersSeparately)
@@ -223,7 +223,7 @@ public class PairGroupsUi
         else
         {
             using (ImRaii.PushId($"group-OnlineCustomTag")) DrawCategory(TagHandler.CustomOnlineTag,
-                onlineUsers.Concat(offlineUsers).Where(u => u.UserPair!.OtherPermissions.IsPaired() && !_tagHandler.HasAnyTag(u.UID)).ToList(), allUsers);
+                onlineUsers.Concat(offlineUsers.Where(u => u.UserPair!.OtherPermissions.IsPaired())).Where(u => !_tagHandler.HasAnyTag(u.UID)).ToList(), allUsers);
         }
         using (ImRaii.PushId($"group-UnpairedCustomTag")) DrawCategory(TagHandler.CustomUnpairedTag,
             offlineUsers.Where(u => !u.UserPair!.OtherPermissions.IsPaired()).ToList(), allUsers);

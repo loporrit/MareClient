@@ -374,9 +374,9 @@ public class CompactUi : WindowMediatorSubscriberBase
                     ? (_configService.Current.PreferNotesOverNamesForVisible ? u.GetNote() : u.PlayerName)
                     : (u.GetNote() ?? u.UserData.AliasOrUID), StringComparer.OrdinalIgnoreCase).ToList();
 
-        var onlineUsers = users.Where(u => u.IsOnline || u.UserPair!.OwnPermissions.IsPaused()).Select(c => new DrawUserPair("Online" + c.UserData.UID, c, _uidDisplayHandler, _apiController, Mediator, _selectGroupForPairUi)).ToList();
+        var onlineUsers = users.Where(u => u.UserPair!.OtherPermissions.IsPaired() && (u.IsOnline || u.UserPair!.OwnPermissions.IsPaused())).Select(c => new DrawUserPair("Online" + c.UserData.UID, c, _uidDisplayHandler, _apiController, Mediator, _selectGroupForPairUi)).ToList();
         var visibleUsers = users.Where(u => u.IsVisible).Select(c => new DrawUserPair("Visible" + c.UserData.UID, c, _uidDisplayHandler, _apiController, Mediator, _selectGroupForPairUi)).ToList();
-        var offlineUsers = users.Where(u => !u.IsOnline && !u.UserPair!.OwnPermissions.IsPaused()).Select(c => new DrawUserPair("Offline" + c.UserData.UID, c, _uidDisplayHandler, _apiController, Mediator, _selectGroupForPairUi)).ToList();
+        var offlineUsers = users.Where(u => !u.UserPair!.OtherPermissions.IsPaired() || (!u.IsOnline && !u.UserPair!.OwnPermissions.IsPaused())).Select(c => new DrawUserPair("Offline" + c.UserData.UID, c, _uidDisplayHandler, _apiController, Mediator, _selectGroupForPairUi)).ToList();
 
         ImGui.BeginChild("list", new Vector2(WindowContentWidth, ySize), border: false);
 
