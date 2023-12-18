@@ -1,4 +1,4 @@
-﻿using LZ4;
+﻿using K4os.Compression.LZ4.Streams;
 using MareSynchronos.Interop;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.Services.Mediator;
@@ -221,11 +221,26 @@ public sealed class FileCacheManager : IDisposable
         return Path.Combine(_configService.Current.CacheFolder, hash + "." + extension);
     }
 
-    public async Task<(string, byte[])> GetCompressedFileData(string fileHash, CancellationToken uploadToken)
+    public async Task<long> GetCompressedFileLength(string fileHash, CancellationToken uploadToken)
     {
         var fileCache = GetFileCacheByHash(fileHash)!.ResolvedFilepath;
-        return (fileHash, LZ4Codec.WrapHC(await File.ReadAllBytesAsync(fileCache, uploadToken).ConfigureAwait(false), 0,
-            (int)new FileInfo(fileCache).Length));
+        using var fs = File.OpenRead(fileCache);
+        var cs = new CountedStream(Stream.Null);
+        using var encstream = LZ4Stream.Encode(cs, new LZ4EncoderSettings(){CompressionLevel=K4os.Compression.LZ4.LZ4Level.L09_HC});
+        await fs.CopyToAsync(encstream, uploadToken).ConfigureAwait(false);
+        encstream.Close();
+        return uploadToken.IsCancellationRequested ? 0 : cs.BytesWritten;
+    }
+
+    public async Task<byte[]> GetCompressedFileData(string fileHash, CancellationToken uploadToken)
+    {
+        var fileCache = GetFileCacheByHash(fileHash)!.ResolvedFilepath;
+        using var fs = File.OpenRead(fileCache);
+        var ms = new MemoryStream(64 * 1024);
+        using var encstream = LZ4Stream.Encode(ms, new LZ4EncoderSettings(){CompressionLevel=K4os.Compression.LZ4.LZ4Level.L09_HC});
+        await fs.CopyToAsync(encstream, uploadToken).ConfigureAwait(false);
+        encstream.Close();
+        return ms.ToArray();
     }
 
     public FileCacheEntity? GetFileCacheByHash(string hash)

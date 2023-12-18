@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
+
 namespace MareSynchronos.WebAPI.Files;
 
 public sealed class FileUploadManager : DisposableMediatorSubscriberBase
@@ -164,10 +165,7 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
     private async Task UploadFileStream(byte[] compressedFile, string fileHash, bool munged, CancellationToken uploadToken)
     {
         if (munged)
-        {
             throw new NotImplementedException();
-            FileDownloadManager.MungeBuffer(compressedFile.AsSpan());
-        }
 
         using var ms = new MemoryStream(compressedFile);
 
@@ -234,10 +232,10 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
         {
             Logger.LogDebug("[{hash}] Compressing", file);
             var data = await _fileDbManager.GetCompressedFileData(file.Hash, uploadToken).ConfigureAwait(false);
-            CurrentUploads.Single(e => string.Equals(e.Hash, data.Item1, StringComparison.Ordinal)).Total = data.Item2.Length;
-            Logger.LogDebug("[{hash}] Starting upload for {filePath}", data.Item1, _fileDbManager.GetFileCacheByHash(data.Item1)!.ResolvedFilepath);
+            CurrentUploads.Single(e => string.Equals(e.Hash, file.Hash, StringComparison.Ordinal)).Total = data.Length;
+            Logger.LogDebug("[{hash}] Starting upload for {filePath}", file.Hash, _fileDbManager.GetFileCacheByHash(file.Hash)!.ResolvedFilepath);
             await uploadTask.ConfigureAwait(false);
-            uploadTask = UploadFile(data.Item2, file.Hash, uploadToken);
+            uploadTask = UploadFile(data, file.Hash, uploadToken);
             uploadToken.ThrowIfCancellationRequested();
         }
 

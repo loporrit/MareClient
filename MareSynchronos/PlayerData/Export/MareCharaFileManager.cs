@@ -1,5 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
-using LZ4;
+using K4os.Compression.LZ4.Legacy;
 using MareSynchronos.API.Data.Enum;
 using MareSynchronos.FileCache;
 using MareSynchronos.Interop;

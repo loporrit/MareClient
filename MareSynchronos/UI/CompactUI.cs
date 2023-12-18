@@ -76,7 +76,7 @@ public class CompactUi : WindowMediatorSubscriberBase
 #if DEBUG
         string dev = "Dev Build";
         var ver = Assembly.GetExecutingAssembly().GetName().Version!;
-        WindowName = $"Loporrit Sync {dev} ({ver.Major}.{ver.Minor}.{ver.Build}-lop{ver.Revision})###LoporritSyncMainUI";
+        WindowName = $"Loporrit Sync {dev} ({ver.Major}.{ver.Minor}.{ver.Build}-lop{ver.Revision})###LoporritSyncMainUIDev";
         Toggle();
 #else
         var ver = Assembly.GetExecutingAssembly().GetName().Version;

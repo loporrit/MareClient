@@ -1,11 +1,12 @@
 ﻿using Dalamud.Utility;
-using LZ4;
+using K4os.Compression.LZ4.Streams;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Dto.Files;
 using MareSynchronos.API.Routes;
 using MareSynchronos.FileCache;
 using MareSynchronos.PlayerData.Handlers;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.Utils;
 using MareSynchronos.WebAPI.Files.Models;
 using Microsoft.Extensions.Logging;
 using System.Net;
@@ -49,14 +50,6 @@ public partial class FileDownloadManager : DisposableMediatorSubscriberBase
 
     public bool IsDownloading => !CurrentDownloads.Any();
 
-    public static void MungeBuffer(Span<byte> buffer)
-    {
-        for (int i = 0; i < buffer.Length; ++i)
-        {
-            buffer[i] ^= 42;
-        }
-    }
-
     public void CancelDownload()
     {
         CurrentDownloads.Clear();
@@ -95,27 +88,27 @@ public partial class FileDownloadManager : DisposableMediatorSubscriberBase
         base.Dispose(disposing);
     }
 
-    private static byte MungeByte(int byteOrEof)
+    private static byte ConvertReadByte(int byteOrEof)
     {
         if (byteOrEof == -1)
         {
             throw new EndOfStreamException();
         }
 
-        return (byte)(byteOrEof ^ 42);
+        return (byte)byteOrEof;
     }
 
     private static (string fileHash, long fileLengthBytes) ReadBlockFileHeader(FileStream fileBlockStream)
     {
         List<char> hashName = [];
         List<char> fileLength = [];
-        var separator = (char)MungeByte(fileBlockStream.ReadByte());
+        var separator = (char)ConvertReadByte(fileBlockStream.ReadByte());
         if (separator != '#') throw new InvalidDataException("Data is invalid, first char is not #");
 
         bool readHash = false;
         while (true)
         {
-            var readChar = (char)MungeByte(fileBlockStream.ReadByte());
+            var readChar = (char)ConvertReadByte(fileBlockStream.ReadByte());
             if (readChar == ':')
             {
                 readHash = true;
@@ -171,8 +164,6 @@ public partial class FileDownloadManager : DisposableMediatorSubscriberBase
                 while ((bytesRead = await stream.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
                 {
                     ct.ThrowIfCancellationRequested();
-
-                    MungeBuffer(buffer.AsSpan(0, bytesRead));
 
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
 
@@ -313,13 +304,14 @@ public partial class FileDownloadManager : DisposableMediatorSubscriberBase
                         Logger.LogDebug("Found file {file} with length {le}, decompressing download", fileHash, fileLengthBytes);
                         var fileExtension = fileReplacement.First(f => string.Equals(f.Hash, fileHash, StringComparison.OrdinalIgnoreCase)).GamePaths[0].Split(".")[^1];
 
-                        byte[] compressedFileContent = new byte[fileLengthBytes];
-                        _ = await fileBlockStream.ReadAsync(compressedFileContent, token).ConfigureAwait(false);
-                        MungeBuffer(compressedFileContent);
+                        using var decompressedFile = new MemoryStream(64 * 1024);
+                        using var innerFileStream = new LimitedStream(fileBlockStream, fileLengthBytes);
+                        innerFileStream.DisposeUnderlying = false;
+                        using var decStream = LZ4Stream.Decode(innerFileStream, 0, true);
+                        await decStream.CopyToAsync(decompressedFile, token);
 
-                        var decompressedFile = LZ4Codec.Unwrap(compressedFileContent);
                         var filePath = _fileDbManager.GetCacheFilePath(fileHash, fileExtension);
-                        await _fileCompactor.WriteAllBytesAsync(filePath, decompressedFile, token).ConfigureAwait(false);
+                        await _fileCompactor.WriteAllBytesAsync(filePath, decompressedFile.ToArray(), token).ConfigureAwait(false);
 
                         PersistFileToStorage(fileHash, filePath);
                     }
