@@ -8,7 +8,6 @@ using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Utils;
 using MareSynchronos.WebAPI.Files;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -25,7 +24,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     private readonly FileCacheManager _fileDbManager;
     private readonly GameObjectHandlerFactory _gameObjectHandlerFactory;
     private readonly IpcManager _ipcManager;
-    private readonly IHostApplicationLifetime _lifetime;
+    private readonly CancellationToken _lifetime;
     private readonly PluginWarningNotificationService _pluginWarningNotificationManager;
     private CancellationTokenSource? _applicationCancellationTokenSource = new();
     private Guid _applicationId;
@@ -44,7 +43,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         GameObjectHandlerFactory gameObjectHandlerFactory,
         IpcManager ipcManager, FileDownloadManager transferManager,
         PluginWarningNotificationService pluginWarningNotificationManager,
-        DalamudUtilService dalamudUtil, IHostApplicationLifetime lifetime,
+        DalamudUtilService dalamudUtil, CancellationToken lifetime,
         FileCacheManager fileDbManager, MareMediator mediator) : base(logger, mediator)
     {
         OnlineUser = onlineUser;
@@ -214,7 +213,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             _charaHandler?.Dispose();
             _charaHandler = null;
 
-            if (_lifetime.ApplicationStopping.IsCancellationRequested) return;
+            if (_lifetime.IsCancellationRequested) return;
 
             if (_dalamudUtil is { IsZoning: false, IsInCutscene: false } && !string.IsNullOrEmpty(name))
             {
