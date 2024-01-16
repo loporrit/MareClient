@@ -9,5 +9,6 @@
     "customization"
   ],
   "IconUrl": "https://raw.githubusercontent.com/loporrit/MareClient/main/MareSynchronos/images/logo.png",
-  "RepoUrl": "https://github.com/loporrit/MareClient/"
+  "RepoUrl": "https://github.com/loporrit/MareClient/",
+  "CanUnloadAsync": true
 }
