@@ -14,7 +14,8 @@ public partial class ApiController
 
         try
         {
-            await PushCharacterDataInternal(data, visibleCharacters.ToList()).ConfigureAwait(false);
+            Logger.LogDebug("Pushing Character data {hash} to {visible}", data.DataHash, string.Join(", ", visibleCharacters.Select(v => v.AliasOrUID)));
+            await PushCharacterDataInternal(data, [.. visibleCharacters]).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
