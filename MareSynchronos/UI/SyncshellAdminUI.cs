@@ -196,7 +196,10 @@ public class SyncshellAdminUI : WindowMediatorSubscriberBase
                                     }
                                     UiSharedService.AttachToolTip(pair.Value != null && pair.Value.Value.IsModerator() ? "Demod user" : "Mod user");
                                     ImGui.SameLine();
+                                }
 
+                                if (_isOwner || (pair.Value == null || (pair.Value != null && !pair.Value.Value.IsModerator())))
+                                {
                                     if (UiSharedService.NormalizedIconButton(FontAwesomeIcon.Thumbtack))
                                     {
                                         GroupUserInfo userInfo = pair.Value ?? GroupUserInfo.None;
