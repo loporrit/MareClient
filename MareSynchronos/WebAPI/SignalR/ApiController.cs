@@ -20,7 +20,8 @@ namespace MareSynchronos.WebAPI;
 public sealed partial class ApiController : DisposableMediatorSubscriberBase, IMareHubClient
 {
     public const string LoporritServer = "Loporrit Main Server";
-    public const string LoporritServiceUri = "wss://loporrit.us.to";
+    public const string LoporritServiceUri = "wss://lop-sync.com";
+    public const string LoporritServiceUriOld = "wss://loporrit.us.to";
     public const string MainServer = "Lunae Crescere Incipientis (Central Server EU)";
     public const string MainServiceUri = "wss://maresynchronos.com";
 

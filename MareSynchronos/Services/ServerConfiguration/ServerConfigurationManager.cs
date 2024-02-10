@@ -343,6 +343,11 @@ public class ServerConfigurationManager
         for (int i = 0; i < _configService.Current.ServerStorage.Count; ++i)
         {
             var x = _configService.Current.ServerStorage[i];
+            if (x.ServerUri.Equals(ApiController.LoporritServiceUriOld, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug("Updating server URI {old} => {new}", x.ServerUri, ApiController.LoporritServiceUri);
+                x.ServerUri = _configService.Current.ServerStorage[i].ServerUri = ApiController.LoporritServiceUri;
+            }
             if (x.ServerUri.Equals(ApiController.LoporritServiceUri, StringComparison.OrdinalIgnoreCase))
                 lopExists = true;
             if (x.ServerUri.Equals(ApiController.MainServiceUri, StringComparison.OrdinalIgnoreCase))
@@ -350,14 +355,14 @@ public class ServerConfigurationManager
         }
         if (mainIdx >= 0)
         {
-            _logger.LogDebug("Removing main server {ApiController.MainServiceUri}");
+            _logger.LogDebug("Removing main server {uri}", ApiController.MainServiceUri);
             _configService.Current.ServerStorage.RemoveAt(mainIdx);
             if (_configService.Current.CurrentServer >= mainIdx)
                 _configService.Current.CurrentServer--;
         }
         if (!lopExists)
         {
-            _logger.LogDebug("Re-adding missing server {ApiController.LoporritServiceUri}");
+            _logger.LogDebug("Re-adding missing server {uri}", ApiController.LoporritServiceUri);
             _configService.Current.ServerStorage.Insert(0, new ServerStorage() { ServerUri = ApiController.LoporritServiceUri, ServerName = ApiController.LoporritServer });
             if (_configService.Current.CurrentServer >= 0)
                 _configService.Current.CurrentServer++;
