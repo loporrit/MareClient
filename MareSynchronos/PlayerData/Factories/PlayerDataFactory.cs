@@ -136,7 +136,7 @@ public class PlayerDataFactory
             totalWaitTime -= 50;
         }
 
-        DateTime start = DateTime.UtcNow;
+        Stopwatch st = Stopwatch.StartNew();
 
         // penumbra call, it's currently broken
         IReadOnlyDictionary<string, string[]>? resolvedPaths;
@@ -225,7 +225,8 @@ public class PlayerDataFactory
             }
         }
 
-        _logger.LogInformation("Building character data for {obj} took {time}ms", objectKind, TimeSpan.FromTicks(DateTime.UtcNow.Ticks - start.Ticks).TotalMilliseconds);
+        st.Stop();
+        _logger.LogInformation("Building character data for {obj} took {time}ms", objectKind, TimeSpan.FromTicks(st.ElapsedTicks).TotalMilliseconds);
 
         return previousData;
     }
