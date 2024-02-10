@@ -92,8 +92,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
         SizeConstraints = new WindowSizeConstraints()
         {
-            MinimumSize = new Vector2(700, 400),
-            MaximumSize = new Vector2(700, 2000),
+            MinimumSize = new Vector2(600, 400),
+            MaximumSize = new Vector2(600, 2000),
         };
 
         Mediator.Subscribe<OpenSettingsUiMessage>(this, (_) => Toggle());
@@ -249,17 +249,21 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("Shows download text (amount of MiB downloaded) in the transfer bars");
         int transferBarWidth = _configService.Current.TransferBarsWidth;
-        ImGui.SetNextItemWidth(500 * ImGuiHelpers.GlobalScale);
-        if (ImGui.SliderInt("Transfer Bar Width", ref transferBarWidth, 10, 500))
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
+        if (ImGui.SliderInt("Transfer Bar Width", ref transferBarWidth, 0, 500))
         {
+            if (transferBarWidth < 10)
+                transferBarWidth = 10;
             _configService.Current.TransferBarsWidth = transferBarWidth;
             _configService.Save();
         }
         UiSharedService.DrawHelpText("Width of the displayed transfer bars (will never be less wide than the displayed text)");
         int transferBarHeight = _configService.Current.TransferBarsHeight;
-        ImGui.SetNextItemWidth(500 * ImGuiHelpers.GlobalScale);
-        if (ImGui.SliderInt("Transfer Bar Height", ref transferBarHeight, 2, 50))
+        ImGui.SetNextItemWidth(250 * ImGuiHelpers.GlobalScale);
+        if (ImGui.SliderInt("Transfer Bar Height", ref transferBarHeight, 0, 50))
         {
+            if (transferBarHeight < 2)
+                transferBarHeight = 2;
             _configService.Current.TransferBarsHeight = transferBarHeight;
             _configService.Save();
         }
