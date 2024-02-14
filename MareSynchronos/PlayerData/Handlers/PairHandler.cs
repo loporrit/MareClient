@@ -459,7 +459,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         if (string.IsNullOrEmpty(PlayerName))
         {
             var pc = _dalamudUtil.FindPlayerByNameHash(OnlineUser.Ident);
-            if (pc == default((string, nint))) return;
+            if (pc.ObjectId == 0) return;
             Logger.LogDebug("One-Time Initializing {this}", this);
             Initialize(pc.Name);
             Logger.LogDebug("One-Time Initialized {this}", this);

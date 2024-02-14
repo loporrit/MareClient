@@ -1,7 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -14,16 +12,24 @@ using Microsoft.Extensions.Logging;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
+using DalamudGameObject = Dalamud.Game.ClientState.Objects.Types.GameObject;
 
 namespace MareSynchronos.Services;
 
 public class DalamudUtilService : IHostedService, IMediatorSubscriber
 {
+    internal struct PlayerCharacter
+    {
+        public uint ObjectId;
+        public string Name;
+        public uint HomeWorldId;
+        public nint Address;
+    };
+
     private struct PlayerInfo
     {
-        public String Name;
-        public uint WorldId;
-        public String Hash;
+        public PlayerCharacter Character;
+        public string Hash;
     };
 
     private readonly List<uint> _classJobIdsIgnoredForPets = [30];
@@ -40,7 +46,8 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private string _lastGlobalBlockPlayer = string.Empty;
     private string _lastGlobalBlockReason = string.Empty;
     private ushort _lastZone = 0;
-    private Dictionary<string, (string Name, nint Address)> _playerCharas = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PlayerCharacter> _playerCharas = new(StringComparer.Ordinal);
+    private readonly List<string> _notUpdatedCharas = [];
     private bool _sentBetweenAreas = false;
     private static readonly Dictionary<uint, PlayerInfo> _playerInfoCache = new();
 
@@ -70,7 +77,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
             await RunOnFrameworkThread(() =>
             {
                 var addr = GetPlayerCharacterFromCachedTableByIdent(ident);
-                var pc = GetPlayerCharacter();
+                var pc = _clientState.LocalPlayer!;
                 var gobj = CreateGameObject(addr);
                 // Any further than roughly 55y is out of range for targetting
                 if (gobj != null && Vector3.Distance(pc.Position, gobj.Position) < 55.0f)
@@ -177,12 +184,6 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public async Task<IntPtr> GetPetAsync(IntPtr? playerPointer = null)
     {
         return await RunOnFrameworkThread(() => GetPet(playerPointer)).ConfigureAwait(false);
-    }
-
-    public PlayerCharacter GetPlayerCharacter()
-    {
-        EnsureIsOnFramework();
-        return _clientState.LocalPlayer!;
     }
 
     public IntPtr GetPlayerCharacterFromCachedTableByIdent(string characterName)
@@ -372,23 +373,27 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         return _gameGui.WorldToScreen(obj.Position, out var screenPos) ? screenPos : Vector2.Zero;
     }
 
-    internal (string Name, nint Address) FindPlayerByNameHash(string ident)
+    internal PlayerCharacter FindPlayerByNameHash(string ident)
     {
         _playerCharas.TryGetValue(ident, out var result);
         return result;
     }
 
-    private PlayerInfo GetPlayerInfo(PlayerCharacter p)
+    private unsafe PlayerInfo GetPlayerInfo(DalamudGameObject chara)
     {
-        uint id = p.ObjectId;
+        uint id = chara.ObjectId;
 
         if (!_playerInfoCache.TryGetValue(id, out var info))
         {
-            info.Name = p.Name.ToString();
-            info.WorldId = p.HomeWorld.Id;
-            info.Hash = Crypto.GetHash256(info.Name + info.WorldId.ToString());
+            info.Character.ObjectId = id;
+            info.Character.Name = chara.Name.ToString();
+            info.Character.HomeWorldId = ((BattleChara*)chara.Address)->Character.HomeWorld;
+            info.Character.Address = chara.Address;
+            info.Hash = Crypto.GetHash256(info.Character.Name + info.Character.HomeWorldId.ToString());
             _playerInfoCache[id] = info;
         }
+
+        info.Character.Address = chara.Address;
 
         return info;
     }
@@ -399,7 +404,6 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         {
             var gameObj = (GameObject*)p.Address;
             var drawObj = gameObj->DrawObject;
-            var playerInfo = GetPlayerInfo(p);
             bool isDrawing = false;
             bool isDrawingChanged = false;
             if ((nint)drawObj != IntPtr.Zero)
@@ -411,20 +415,20 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
                     if (!isDrawing)
                     {
                         isDrawing = ((CharacterBase*)drawObj)->HasModelFilesInSlotLoaded != 0;
-                        if (isDrawing && !string.Equals(_lastGlobalBlockPlayer, playerInfo.Name, StringComparison.Ordinal)
+                        if (isDrawing && !string.Equals(_lastGlobalBlockPlayer, p.Name, StringComparison.Ordinal)
                             && !string.Equals(_lastGlobalBlockReason, "HasModelFilesInSlotLoaded", StringComparison.Ordinal))
                         {
-                            _lastGlobalBlockPlayer = playerInfo.Name;
+                            _lastGlobalBlockPlayer = p.Name;
                             _lastGlobalBlockReason = "HasModelFilesInSlotLoaded";
                             isDrawingChanged = true;
                         }
                     }
                     else
                     {
-                        if (!string.Equals(_lastGlobalBlockPlayer, playerInfo.Name, StringComparison.Ordinal)
+                        if (!string.Equals(_lastGlobalBlockPlayer, p.Name, StringComparison.Ordinal)
                             && !string.Equals(_lastGlobalBlockReason, "HasModelInSlotLoaded", StringComparison.Ordinal))
                         {
-                            _lastGlobalBlockPlayer = playerInfo.Name;
+                            _lastGlobalBlockPlayer = p.Name;
                             _lastGlobalBlockReason = "HasModelInSlotLoaded";
                             isDrawingChanged = true;
                         }
@@ -432,10 +436,10 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
                 }
                 else
                 {
-                    if (!string.Equals(_lastGlobalBlockPlayer, playerInfo.Name, StringComparison.Ordinal)
+                    if (!string.Equals(_lastGlobalBlockPlayer, p.Name, StringComparison.Ordinal)
                         && !string.Equals(_lastGlobalBlockReason, "RenderFlags", StringComparison.Ordinal))
                     {
-                        _lastGlobalBlockPlayer = playerInfo.Name;
+                        _lastGlobalBlockPlayer = p.Name;
                         _lastGlobalBlockReason = "RenderFlags";
                         isDrawingChanged = true;
                     }
@@ -444,7 +448,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
 
             if (isDrawingChanged)
             {
-                _logger.LogTrace("Global draw block: START => {name} ({reason})", playerInfo.Name, _lastGlobalBlockReason);
+                _logger.LogTrace("Global draw block: START => {name} ({reason})", p.Name, _lastGlobalBlockReason);
             }
 
             IsAnythingDrawing |= isDrawing;
@@ -464,19 +468,32 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         }
 
         IsAnythingDrawing = false;
-
-        var playerCharaList = new Dictionary<string, (string Name, nint Address)>(StringComparer.Ordinal);
         _performanceCollector.LogPerformance(this, "ObjTableToCharas",
-            () => {
-                foreach (var p in _objectTable.OfType<PlayerCharacter>().Where(o => o.ObjectIndex < 200))
+            () =>
+            {
+                _notUpdatedCharas.AddRange(_playerCharas.Keys);
+
+                foreach (var chara in _objectTable)
                 {
-                    CheckCharacterForDrawing(p);
-                    var info = GetPlayerInfo(p);
-                    playerCharaList.Add(info.Hash, (info.Name, p.Address));
+                    if (chara.ObjectIndex % 2 != 0 || chara.ObjectIndex >= 200) continue;
+
+                    string charaName = chara.Name.ToString();
+                    uint homeWorldId = ((BattleChara*)chara.Address)->Character.HomeWorld;
+
+                    var info = GetPlayerInfo(chara);
+                    if (!IsAnythingDrawing)
+                        CheckCharacterForDrawing(info.Character);
+                    _notUpdatedCharas.Remove(info.Hash);
+                    _playerCharas[info.Hash] = info.Character;
                 }
-            }
-        );
-        _playerCharas = playerCharaList;
+
+                foreach (var notUpdatedChara in _notUpdatedCharas)
+                {
+                    _playerCharas.Remove(notUpdatedChara);
+                }
+
+                _notUpdatedCharas.Clear();
+            });
 
         if (!IsAnythingDrawing && !string.IsNullOrEmpty(_lastGlobalBlockPlayer))
         {
