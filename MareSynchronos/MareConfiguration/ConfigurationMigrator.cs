@@ -6,11 +6,26 @@ using Newtonsoft.Json;
 
 namespace MareSynchronos.MareConfiguration;
 
-public class ConfigurationMigrator(ILogger<ConfigurationMigrator> logger, DalamudPluginInterface pi) : IHostedService
+public class ConfigurationMigrator(ILogger<ConfigurationMigrator> logger, DalamudPluginInterface pi,
+    NotesConfigService notesConfig) : IHostedService
 {
     public void Migrate()
     {
-        // currently nothing to migrate
+        var oldUri = MareSynchronos.WebAPI.ApiController.LoporritServiceUriOld;
+        var newUri = MareSynchronos.WebAPI.ApiController.LoporritServiceUri;
+
+        if (notesConfig.Current.ServerNotes.TryGetValue(oldUri, out var old))
+        {
+            logger.LogDebug("Migrating server notes {old} => {new}", oldUri, newUri);
+            notesConfig.Current.ServerNotes.TryAdd(newUri, new());
+            var merged = notesConfig.Current.ServerNotes.GetValueOrDefault(newUri, new());
+            foreach (var (k, v) in old.GidServerComments)
+                merged.GidServerComments.TryAdd(k, v);
+            foreach (var (k, v) in old.UidServerComments)
+                merged.UidServerComments.TryAdd(k, v);
+            notesConfig.Current.ServerNotes.Remove(oldUri);
+            notesConfig.Save();
+        }
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
