@@ -80,7 +80,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<FileDownloadManagerFactory>();
             collection.AddSingleton((s) => new PairHandlerFactory(s.GetRequiredService<ILoggerFactory>(), s.GetRequiredService<GameObjectHandlerFactory>(),
                 s.GetRequiredService<IpcManager>(), s.GetRequiredService<FileDownloadManagerFactory>(), s.GetRequiredService<DalamudUtilService>(),
-                s.GetRequiredService<PluginWarningNotificationService>(), 
+                s.GetRequiredService<PluginWarningNotificationService>(), s.GetRequiredService<ServerConfigurationManager>(),
                 CancellationTokenSource.CreateLinkedTokenSource(addonLifecycle.GameShuttingDownToken, addonLifecycle.DalamudUnloadingToken).Token,
                 s.GetRequiredService<FileCacheManager>(), s.GetRequiredService<MareMediator>()));
             collection.AddSingleton<PairFactory>();
@@ -104,7 +104,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton((s) => new NotesConfigService(pluginInterface.ConfigDirectory.FullName));
             collection.AddSingleton((s) => new ServerTagConfigService(pluginInterface.ConfigDirectory.FullName));
             collection.AddSingleton((s) => new TransientConfigService(pluginInterface.ConfigDirectory.FullName));
-            collection.AddSingleton((s) => new ConfigurationMigrator(s.GetRequiredService<ILogger<ConfigurationMigrator>>(), pluginInterface));
+            collection.AddSingleton((s) => new ConfigurationMigrator(s.GetRequiredService<ILogger<ConfigurationMigrator>>(), pluginInterface, s.GetRequiredService<NotesConfigService>()));
             collection.AddSingleton<HubFactory>();
 
             // add scoped services

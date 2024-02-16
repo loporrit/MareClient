@@ -5,6 +5,7 @@ using MareSynchronos.PlayerData.Handlers;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.Services.ServerConfiguration;
 using Microsoft.Extensions.Logging;
 
 namespace MareSynchronos.PlayerData.Factories;
@@ -20,11 +21,12 @@ public class PairHandlerFactory
     private readonly ILoggerFactory _loggerFactory;
     private readonly MareMediator _mareMediator;
     private readonly PluginWarningNotificationService _pluginWarningNotificationManager;
+    private readonly ServerConfigurationManager _serverConfigurationManager;
 
     public PairHandlerFactory(ILoggerFactory loggerFactory, GameObjectHandlerFactory gameObjectHandlerFactory, IpcManager ipcManager,
         FileDownloadManagerFactory fileDownloadManagerFactory, DalamudUtilService dalamudUtilService,
-        PluginWarningNotificationService pluginWarningNotificationManager, CancellationToken dalamudLifetime,
-        FileCacheManager fileCacheManager, MareMediator mareMediator)
+        PluginWarningNotificationService pluginWarningNotificationManager, ServerConfigurationManager serverConfigurationManager,
+        CancellationToken dalamudLifetime, FileCacheManager fileCacheManager, MareMediator mareMediator)
     {
         _loggerFactory = loggerFactory;
         _gameObjectHandlerFactory = gameObjectHandlerFactory;
@@ -32,6 +34,7 @@ public class PairHandlerFactory
         _fileDownloadManagerFactory = fileDownloadManagerFactory;
         _dalamudUtilService = dalamudUtilService;
         _pluginWarningNotificationManager = pluginWarningNotificationManager;
+        _serverConfigurationManager = serverConfigurationManager;
         _dalamudLifetimeToken = dalamudLifetime;
         _fileCacheManager = fileCacheManager;
         _mareMediator = mareMediator;
@@ -40,7 +43,7 @@ public class PairHandlerFactory
     public PairHandler Create(OnlineUserIdentDto onlineUserIdentDto)
     {
         return new PairHandler(_loggerFactory.CreateLogger<PairHandler>(), onlineUserIdentDto, _gameObjectHandlerFactory,
-            _ipcManager, _fileDownloadManagerFactory.Create(), _pluginWarningNotificationManager, _dalamudUtilService, _dalamudLifetimeToken,
-            _fileCacheManager, _mareMediator);
+            _ipcManager, _fileDownloadManagerFactory.Create(), _pluginWarningNotificationManager, _serverConfigurationManager, _dalamudUtilService,
+            _dalamudLifetimeToken, _fileCacheManager, _mareMediator);
     }
 }

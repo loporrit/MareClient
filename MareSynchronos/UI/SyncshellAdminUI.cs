@@ -155,9 +155,10 @@ public class SyncshellAdminUI : WindowMediatorSubscriberBase
 
                                 ImGui.TableNextColumn(); // online/name
                                 string onlineText = pair.Key.IsOnline ? "Online" : "Offline";
-                                if (!string.IsNullOrEmpty(pair.Key.PlayerName))
+                                string? name = pair.Key.GetNoteOrName();
+                                if (!string.IsNullOrEmpty(name))
                                 {
-                                    onlineText += " (" + pair.Key.PlayerName + ")";
+                                    onlineText += " (" + name + ")";
                                 }
                                 var boolcolor = UiSharedService.GetBoolColor(pair.Key.IsOnline);
                                 ImGui.AlignTextToFramePadding();

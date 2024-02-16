@@ -165,12 +165,13 @@ public class UidDisplayHandler
             playerText = pair.UserData.AliasOrUID;
         }
 
-        if (_mareConfigService.Current.ShowCharacterNameInsteadOfNotesForVisible && pair.IsVisible && !showUidInsteadOfName)
+        if (_mareConfigService.Current.ShowCharacterNames && textIsUid && !showUidInsteadOfName)
         {
-            playerText = pair.PlayerName;
-            textIsUid = false;
-            if (_mareConfigService.Current.PreferNotesOverNamesForVisible)
+            var name = pair.PlayerName;
+            if (name != null)
             {
+                playerText = name;
+                textIsUid = false;
                 var note = pair.GetNote();
                 if (note != null)
                 {

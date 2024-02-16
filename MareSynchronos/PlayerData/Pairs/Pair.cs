@@ -1,11 +1,13 @@
 ﻿using Dalamud.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
+using Lumina.Excel.GeneratedSheets2;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Comparer;
 using MareSynchronos.API.Data.Enum;
 using MareSynchronos.API.Data.Extensions;
 using MareSynchronos.API.Dto.Group;
 using MareSynchronos.API.Dto.User;
+using MareSynchronos.MareConfiguration;
 using MareSynchronos.PlayerData.Factories;
 using MareSynchronos.PlayerData.Handlers;
 using MareSynchronos.Services.Mediator;
@@ -21,16 +23,19 @@ public class Pair
     private readonly SemaphoreSlim _creationSemaphore = new(1);
     private readonly ILogger<Pair> _logger;
     private readonly MareMediator _mediator;
+    private readonly MareConfigService _mareConfig;
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private CancellationTokenSource _applicationCts = new CancellationTokenSource();
     private OnlineUserIdentDto? _onlineUserIdentDto = null;
+    private string? _playerName = null;
 
     public Pair(ILogger<Pair> logger, PairHandlerFactory cachedPlayerFactory,
-        MareMediator mediator, ServerConfigurationManager serverConfigurationManager)
+        MareMediator mediator, MareConfigService mareConfig, ServerConfigurationManager serverConfigurationManager)
     {
         _logger = logger;
         _cachedPlayerFactory = cachedPlayerFactory;
         _mediator = mediator;
+        _mareConfig = mareConfig;
         _serverConfigurationManager = serverConfigurationManager;
     }
 
@@ -43,7 +48,7 @@ public class Pair
 
     public bool IsVisible => CachedPlayer?.IsVisible ?? false;
     public CharacterData? LastReceivedCharacterData { get; set; }
-    public string? PlayerName => CachedPlayer?.PlayerName ?? string.Empty;
+    public string? PlayerName => GetPlayerName();
     public long LastAppliedDataSize => CachedPlayer?.LastAppliedDataSize ?? -1;
 
     public UserData UserData => UserPair?.User ?? GroupPair.First().Value.User;
@@ -152,6 +157,23 @@ public class Pair
     public string? GetNote()
     {
         return _serverConfigurationManager.GetNoteForUid(UserData.UID);
+    }
+
+    public string? GetPlayerName()
+    {
+        if (CachedPlayer != null && CachedPlayer.PlayerName != null)
+            return CachedPlayer.PlayerName;
+        else
+            return _serverConfigurationManager.GetNameForUid(UserData.UID);
+    }
+
+    public string? GetNoteOrName()
+    {
+        string? note = GetNote();
+        if (_mareConfig.Current.ShowCharacterNames || IsVisible)
+            return note ?? GetPlayerName();
+        else
+            return note;
     }
 
     public string GetPlayerNameHash()

@@ -27,13 +27,14 @@ public class MareConfig : IMareConfiguration
     public int ParallelDownloads { get; set; } = 10;
     public int DownloadSpeedLimitInBytes { get; set; } = 0;
     public DownloadSpeeds DownloadSpeedType { get; set; } = DownloadSpeeds.MBps;
-    public bool PreferNotesOverNamesForVisible { get; set; } = false;
+    [Obsolete] public bool PreferNotesOverNamesForVisible { get; set; } = false;
     public float ProfileDelay { get; set; } = 1.5f;
     public bool ProfilePopoutRight { get; set; } = false;
     public bool ProfilesAllowNsfw { get; set; } = false;
     public bool ProfilesShow { get; set; } = false;
     public bool ShowSyncshellUsersInVisible { get; set; } = true;
-    public bool ShowCharacterNameInsteadOfNotesForVisible { get; set; } = false;
+    [Obsolete] public bool ShowCharacterNameInsteadOfNotesForVisible { get; set; } = false;
+    public bool ShowCharacterNames { get; set; } = true;
     public bool ShowOfflineUsersSeparately { get; set; } = true;
     public bool ShowSyncshellOfflineUsersSeparately { get; set; } = true;
     public bool GroupUpSyncshells { get; set; } = true;

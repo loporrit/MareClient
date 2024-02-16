@@ -1,4 +1,5 @@
-﻿using MareSynchronos.PlayerData.Pairs;
+﻿using MareSynchronos.MareConfiguration;
+using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
 using Microsoft.Extensions.Logging;
@@ -10,19 +11,21 @@ public class PairFactory
     private readonly PairHandlerFactory _cachedPlayerFactory;
     private readonly ILoggerFactory _loggerFactory;
     private readonly MareMediator _mareMediator;
+    private readonly MareConfigService _mareConfig;
     private readonly ServerConfigurationManager _serverConfigurationManager;
 
     public PairFactory(ILoggerFactory loggerFactory, PairHandlerFactory cachedPlayerFactory,
-        MareMediator mareMediator, ServerConfigurationManager serverConfigurationManager)
+        MareMediator mareMediator, MareConfigService mareConfig, ServerConfigurationManager serverConfigurationManager)
     {
         _loggerFactory = loggerFactory;
         _cachedPlayerFactory = cachedPlayerFactory;
         _mareMediator = mareMediator;
+        _mareConfig = mareConfig;
         _serverConfigurationManager = serverConfigurationManager;
     }
 
     public Pair Create()
     {
-        return new Pair(_loggerFactory.CreateLogger<Pair>(), _cachedPlayerFactory, _mareMediator, _serverConfigurationManager);
+        return new Pair(_loggerFactory.CreateLogger<Pair>(), _cachedPlayerFactory, _mareMediator, _mareConfig, _serverConfigurationManager);
     }
 }

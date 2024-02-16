@@ -653,7 +653,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
         ImGui.Separator();
         UiSharedService.FontText("UI", _uiShared.UidFont);
-        var showNameInsteadOfNotes = _configService.Current.ShowCharacterNameInsteadOfNotesForVisible;
+        var showCharacterNames = _configService.Current.ShowCharacterNames;
         var showVisibleSeparate = _configService.Current.ShowVisibleUsersSeparately;
         var showOfflineSeparate = _configService.Current.ShowOfflineUsersSeparately;
         var showProfiles = _configService.Current.ProfilesShow;
@@ -718,23 +718,12 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
         UiSharedService.DrawHelpText("This will show all currently offline users in a special 'Offline' group in the main UI.");
 
-        if (ImGui.Checkbox("Show player name for visible players", ref showNameInsteadOfNotes))
+        if (ImGui.Checkbox("Show player names", ref showCharacterNames))
         {
-            _configService.Current.ShowCharacterNameInsteadOfNotesForVisible = showNameInsteadOfNotes;
+            _configService.Current.ShowCharacterNames = showCharacterNames;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will show the character name instead of custom set note when a character is visible");
-
-        ImGui.Indent();
-        if (!_configService.Current.ShowCharacterNameInsteadOfNotesForVisible) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("Prefer notes over player names for visible players", ref preferNotesInsteadOfName))
-        {
-            _configService.Current.PreferNotesOverNamesForVisible = preferNotesInsteadOfName;
-            _configService.Save();
-        }
-        UiSharedService.DrawHelpText("If you set a note for a player it will be shown instead of the player name");
-        if (!_configService.Current.ShowCharacterNameInsteadOfNotesForVisible) ImGui.EndDisabled();
-        ImGui.Unindent();
+        UiSharedService.DrawHelpText("This will show character names instead of UIDs when possible");
 
         if (ImGui.Checkbox("Show Profiles on Hover", ref showProfiles))
         {

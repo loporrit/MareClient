@@ -399,7 +399,7 @@ internal sealed class GroupPanel
                 .OrderByDescending(u => string.Equals(u.UserData.UID, groupDto.OwnerUID, StringComparison.Ordinal))
                 .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsModerator())
                 .ThenByDescending(u => u.GroupPair[groupDto].GroupPairStatusInfo.IsPinned())
-                .ThenBy(u => u.GetNote() ?? u.UserData.AliasOrUID, StringComparer.OrdinalIgnoreCase);
+                .ThenBy(u => u.GetNoteOrName() ?? u.UserData.AliasOrUID, StringComparer.OrdinalIgnoreCase);
 
             var visibleUsers = new List<DrawGroupPair>();
             var onlineUsers = new List<DrawGroupPair>();

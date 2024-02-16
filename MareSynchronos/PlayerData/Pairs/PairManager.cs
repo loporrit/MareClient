@@ -123,7 +123,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
             && (_configurationService.Current.ShowOnlineNotificationsOnlyForNamedPairs && !string.IsNullOrEmpty(pair.GetNote())
             || !_configurationService.Current.ShowOnlineNotificationsOnlyForNamedPairs))
         {
-            string? note = pair.GetNote();
+            string? note = pair.GetNoteOrName();
             var msg = !string.IsNullOrEmpty(note)
                 ? $"{note} ({pair.UserData.AliasOrUID}) is now online"
                 : $"{pair.UserData.AliasOrUID} is now online";

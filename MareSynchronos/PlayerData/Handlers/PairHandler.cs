@@ -6,6 +6,7 @@ using MareSynchronos.PlayerData.Factories;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.Utils;
 using MareSynchronos.WebAPI.Files;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     private readonly IpcManager _ipcManager;
     private readonly CancellationToken _lifetime;
     private readonly PluginWarningNotificationService _pluginWarningNotificationManager;
+    private readonly ServerConfigurationManager _serverConfigurationManager;
     private CancellationTokenSource? _applicationCancellationTokenSource = new();
     private Guid _applicationId;
     private Task? _applicationTask;
@@ -42,7 +44,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     public PairHandler(ILogger<PairHandler> logger, OnlineUserIdentDto onlineUser,
         GameObjectHandlerFactory gameObjectHandlerFactory,
         IpcManager ipcManager, FileDownloadManager transferManager,
-        PluginWarningNotificationService pluginWarningNotificationManager,
+        PluginWarningNotificationService pluginWarningNotificationManager, ServerConfigurationManager serverConfigurationManager,
         DalamudUtilService dalamudUtil, CancellationToken lifetime,
         FileCacheManager fileDbManager, MareMediator mediator) : base(logger, mediator)
     {
@@ -51,6 +53,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         _ipcManager = ipcManager;
         _downloadManager = transferManager;
         _pluginWarningNotificationManager = pluginWarningNotificationManager;
+        _serverConfigurationManager = serverConfigurationManager;
         _dalamudUtil = dalamudUtil;
         _lifetime = lifetime;
         _fileDbManager = fileDbManager;
@@ -507,6 +510,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         });
 
         _ipcManager.PenumbraAssignTemporaryCollectionAsync(Logger, _penumbraCollection, _charaHandler.GetGameObject()!.ObjectIndex).GetAwaiter().GetResult();
+        _serverConfigurationManager.SetNameForUid(OnlineUser.User.UID, name);
     }
 
     private async Task RevertCustomizationDataAsync(ObjectKind objectKind, string name, Guid applicationId, CancellationToken cancelToken)

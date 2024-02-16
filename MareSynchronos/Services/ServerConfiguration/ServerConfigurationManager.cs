@@ -229,6 +229,16 @@ public class ServerConfigurationManager
         return null;
     }
 
+    internal string? GetNameForUid(string uid)
+    {
+        if (CurrentNotesStorage().UidLastSeenNames.TryGetValue(uid, out var name))
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            return name;
+        }
+        return null;
+    }
+
     internal HashSet<string> GetServerAvailablePairTags()
     {
         return CurrentServerTagStorage().ServerAvailablePairTags;
@@ -322,6 +332,17 @@ public class ServerConfigurationManager
         CurrentNotesStorage().UidServerComments[uid] = note;
         if (save)
             _notesConfig.Save();
+    }
+
+    internal void SetNameForUid(string uid, string name)
+    {
+        if (string.IsNullOrEmpty(uid)) return;
+
+        if (CurrentNotesStorage().UidLastSeenNames.TryGetValue(uid, out var currentName) && currentName == name)
+            return;
+
+        CurrentNotesStorage().UidLastSeenNames[uid] = name;
+        _notesConfig.Save();
     }
 
     private ServerNotesStorage CurrentNotesStorage()
