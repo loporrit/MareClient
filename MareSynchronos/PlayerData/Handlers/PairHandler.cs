@@ -219,11 +219,12 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
 
             if (_lifetime.IsCancellationRequested) return;
 
+            Logger.LogDebug("[{applicationId}] Removing Temp Collection for {name} ({user})", applicationId, name, OnlineUser);
+            _ipcManager.PenumbraRemoveTemporaryCollectionAsync(Logger, applicationId, _penumbraCollection).GetAwaiter().GetResult();
+
             if (_dalamudUtil is { IsZoning: false, IsInCutscene: false } && !string.IsNullOrEmpty(name))
             {
                 Logger.LogTrace("[{applicationId}] Restoring state for {name} ({OnlineUser})", applicationId, name, OnlineUser);
-                Logger.LogDebug("[{applicationId}] Removing Temp Collection for {name} ({user})", applicationId, name, OnlineUser);
-                _ipcManager.PenumbraRemoveTemporaryCollectionAsync(Logger, applicationId, _penumbraCollection).GetAwaiter().GetResult();
                 if (!IsVisible)
                 {
                     Logger.LogDebug("[{applicationId}] Restoring Glamourer for {name} ({user})", applicationId, name, OnlineUser);
