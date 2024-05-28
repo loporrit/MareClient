@@ -37,6 +37,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     private bool _forceApplyMods = false;
     private bool _isVisible;
     private Guid _penumbraCollection;
+    private Dictionary<ObjectKind, Guid?> _customizeIds = [];
     private bool _redrawOnNextApplication = false;
     private CombatData? _dataReceivedInCombat;
     public long LastAppliedDataSize { get; private set; }
@@ -294,11 +295,12 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                     case PlayerChanges.Customize:
                         if (charaData.CustomizePlusData.TryGetValue(changes.Key, out var customizePlusData))
                         {
-                            await _ipcManager.CustomizePlusSetBodyScaleAsync(handler.Address, customizePlusData).ConfigureAwait(false);
+                            _customizeIds[changes.Key] = await _ipcManager.CustomizePlusSetBodyScaleAsync(handler.Address, customizePlusData).ConfigureAwait(false);
                         }
-                        else
+                        else if (_customizeIds.TryGetValue(changes.Key, out var customizeId))
                         {
-                            await _ipcManager.CustomizePlusRevertAsync(handler.Address).ConfigureAwait(false);
+                            await _ipcManager.CustomizePlusRevertByIdAsync(customizeId).ConfigureAwait(false);
+                            _customizeIds.Remove(changes.Key);
                         }
                         break;
 
@@ -520,6 +522,11 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
 
         Logger.LogDebug("[{applicationId}] Reverting all Customization for {alias}/{name} {objectKind}", applicationId, OnlineUser.User.AliasOrUID, name, objectKind);
 
+        if (_customizeIds.TryGetValue(objectKind, out var customizeId))
+        {
+            _customizeIds.Remove(objectKind);
+        }
+
         if (objectKind == ObjectKind.Player)
         {
             using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.Player, () => address, isWatched: false).ConfigureAwait(false);
@@ -531,7 +538,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             await _ipcManager.HeelsRestoreOffsetForPlayerAsync(address).ConfigureAwait(false);
             tempHandler.CompareNameAndThrow(name);
             Logger.LogDebug("[{applicationId}] Restoring C+ for {alias}/{name}", applicationId, OnlineUser.User.AliasOrUID, name);
-            await _ipcManager.CustomizePlusRevertAsync(address).ConfigureAwait(false);
+            await _ipcManager.CustomizePlusRevertByIdAsync(customizeId).ConfigureAwait(false);
             tempHandler.CompareNameAndThrow(name);
             Logger.LogDebug("[{applicationId}] Restoring Honorific for {alias}/{name}", applicationId, OnlineUser.User.AliasOrUID, name);
             await _ipcManager.HonorificClearTitleAsync(address).ConfigureAwait(false);
@@ -541,7 +548,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             var minionOrMount = await _dalamudUtil.GetMinionOrMountAsync(address).ConfigureAwait(false);
             if (minionOrMount != nint.Zero)
             {
-                await _ipcManager.CustomizePlusRevertAsync(minionOrMount).ConfigureAwait(false);
+                await _ipcManager.CustomizePlusRevertByIdAsync(customizeId).ConfigureAwait(false);
                 using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.MinionOrMount, () => minionOrMount, isWatched: false).ConfigureAwait(false);
                 await _ipcManager.GlamourerRevert(Logger, tempHandler.Name, tempHandler, applicationId, cancelToken).ConfigureAwait(false);
                 await _ipcManager.PenumbraRedrawAsync(Logger, tempHandler, applicationId, cancelToken).ConfigureAwait(false);
@@ -552,7 +559,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             var pet = await _dalamudUtil.GetPetAsync(address).ConfigureAwait(false);
             if (pet != nint.Zero)
             {
-                await _ipcManager.CustomizePlusRevertAsync(pet).ConfigureAwait(false);
+                await _ipcManager.CustomizePlusRevertByIdAsync(customizeId).ConfigureAwait(false);
                 using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.Pet, () => pet, isWatched: false).ConfigureAwait(false);
                 await _ipcManager.GlamourerRevert(Logger, tempHandler.Name, tempHandler, applicationId, cancelToken).ConfigureAwait(false);
                 await _ipcManager.PenumbraRedrawAsync(Logger, tempHandler, applicationId, cancelToken).ConfigureAwait(false);
@@ -563,7 +570,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             var companion = await _dalamudUtil.GetCompanionAsync(address).ConfigureAwait(false);
             if (companion != nint.Zero)
             {
-                await _ipcManager.CustomizePlusRevertAsync(companion).ConfigureAwait(false);
+                await _ipcManager.CustomizePlusRevertByIdAsync(customizeId).ConfigureAwait(false);
                 using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.Pet, () => companion, isWatched: false).ConfigureAwait(false);
                 await _ipcManager.GlamourerRevert(Logger, tempHandler.Name, tempHandler, applicationId, cancelToken).ConfigureAwait(false);
                 await _ipcManager.PenumbraRedrawAsync(Logger, tempHandler, applicationId, cancelToken).ConfigureAwait(false);
