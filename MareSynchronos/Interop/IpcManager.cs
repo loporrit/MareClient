@@ -234,7 +234,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (gameObj is Character c)
             {
                 Logger.LogTrace("CustomizePlus reverting for {chara}", c.Address.ToString("X"));
-                _customizePlusRevertCharacter!.InvokeAction(c);
+                _customizePlusRevertCharacter!.InvokeFunc(c);
             }
         }).ConfigureAwait(false);
     }
@@ -260,7 +260,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
                 Logger.LogTrace("CustomizePlus applying for {chara}", c.Address.ToString("X"));
                 if (scale.IsNullOrEmpty())
                 {
-                    _customizePlusRevertCharacter!.InvokeAction(c);
+                    _customizePlusRevertCharacter!.InvokeFunc(c);
                     return null;
                 }
                 else
