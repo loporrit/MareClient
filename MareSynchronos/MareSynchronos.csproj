@@ -43,13 +43,28 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="7.0.11" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Glamourer.Api" Version="2.0.0" />
-    <PackageReference Include="Penumbra.Api" Version="5.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.11.0.78383">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.32.1" />
+  </ItemGroup>
+
+  <ItemGroup  Condition="Exists('..\Penumbra.Api\Penumbra.Api.csproj')">
+    <ProjectReference Include="..\Penumbra.Api\Penumbra.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!Exists('..\Penumbra.Api\Penumbra.Api.csproj')">
+    <PackageReference Include="Penumbra.Api" Version="5.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('..\Penumbra.Api\Penumbra.Api.csproj')">
+    <ProjectReference Include="..\Glamourer.Api\Glamourer.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!Exists('..\Glamourer.Api\Glamourer.Api.csproj')">
+    <PackageReference Include="Glamourer.Api" Version="2.0.1" />
   </ItemGroup>
 
   <PropertyGroup>
