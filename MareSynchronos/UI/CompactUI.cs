@@ -116,12 +116,12 @@ public class CompactUi : WindowMediatorSubscriberBase
         if (!_apiController.IsCurrentVersion)
         {
             var ver = _apiController.CurrentClientVersion;
-            if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
+            _uiShared.UidFont.Push();
             var unsupported = "UNSUPPORTED VERSION";
             var uidTextSize = ImGui.CalcTextSize(unsupported);
             ImGui.SetCursorPosX((ImGui.GetWindowContentRegionMax().X + ImGui.GetWindowContentRegionMin().X) / 2 - uidTextSize.X / 2);
                 ImGui.TextColored(ImGuiColors.DalamudRed, unsupported);
-            if (_uiShared.UidFontBuilt) ImGui.PopFont();
+            _uiShared.UidFont.Pop();
             UiSharedService.ColorTextWrapped($"Your Loporrit installation is out of date, the current version is {ver.Major}.{ver.Minor}.{ver.Build}. " +
                 $"It is highly recommended to keep Loporrit up to date. Open /xlplugins and update the plugin.", ImGuiColors.DalamudRed);
         }
@@ -510,9 +510,9 @@ public class CompactUi : WindowMediatorSubscriberBase
         var uidText = GetUidText();
         var buttonSizeX = 0f;
 
-        if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
+        _uiShared.UidFont.Push();
         var uidTextSize = ImGui.CalcTextSize(uidText);
-        if (_uiShared.UidFontBuilt) ImGui.PopFont();
+        _uiShared.UidFont.Pop();
 
         var originalPos = ImGui.GetCursorPos();
         ImGui.SetWindowFontScale(1.5f);
@@ -544,9 +544,9 @@ public class CompactUi : WindowMediatorSubscriberBase
 
         ImGui.SetCursorPosY(originalPos.Y + buttonSize.Y / 2 - uidTextSize.Y / 2 - ImGui.GetStyle().ItemSpacing.Y / 2);
         ImGui.SetCursorPosX((ImGui.GetWindowContentRegionMax().X + ImGui.GetWindowContentRegionMin().X) / 2 + buttonSizeX - uidTextSize.X / 2);
-        if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
+        _uiShared.UidFont.Push();
         ImGui.TextColored(GetUidColor(), uidText);
-        if (_uiShared.UidFontBuilt) ImGui.PopFont();
+        _uiShared.UidFont.Pop();
 
         if (_apiController.ServerState is not ServerState.Connected)
         {

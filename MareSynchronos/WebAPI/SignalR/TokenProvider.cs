@@ -1,4 +1,5 @@
-﻿using MareSynchronos.API.Routes;
+﻿using Dalamud.Interface.ImGuiNotification;
+using MareSynchronos.API.Routes;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
@@ -83,8 +84,7 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
 
             if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                Mediator.Publish(new NotificationMessage("Error refreshing token", "Your authentication token could not be renewed. Try reconnecting manually.",
-                    Dalamud.Interface.Internal.Notifications.NotificationType.Error));
+                Mediator.Publish(new NotificationMessage("Error refreshing token", "Your authentication token could not be renewed. Try reconnecting manually.", NotificationType.Error));
                 Mediator.Publish(new DisconnectedMessage());
                 throw new MareAuthFailureException(response);
             }

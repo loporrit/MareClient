@@ -101,10 +101,10 @@ public class IntroUi : WindowMediatorSubscriberBase
         }
         else if (!_configService.Current.AcceptedAgreement && _readFirstPage)
         {
-            if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
+            _uiShared.UidFont.Push();
             var textSize = ImGui.CalcTextSize(Strings.ToS.LanguageLabel);
             ImGui.TextUnformatted(Strings.ToS.AgreementLabel);
-            if (_uiShared.UidFontBuilt) ImGui.PopFont();
+            _uiShared.UidFont.Pop();
 
             ImGui.SameLine();
             var languageSize = ImGui.CalcTextSize(Strings.ToS.LanguageLabel);
@@ -155,9 +155,9 @@ public class IntroUi : WindowMediatorSubscriberBase
                      || !_configService.Current.InitialScanComplete
                      || !Directory.Exists(_configService.Current.CacheFolder)))
         {
-            if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
+            _uiShared.UidFont.Push();
             ImGui.TextUnformatted("File Storage Setup");
-            if (_uiShared.UidFontBuilt) ImGui.PopFont();
+            _uiShared.UidFont.Pop();
             ImGui.Separator();
 
             if (!_uiShared.HasValidPenumbraModPath)
@@ -201,9 +201,9 @@ public class IntroUi : WindowMediatorSubscriberBase
         }
         else if (!_uiShared.ApiController.ServerAlive)
         {
-            if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
+            _uiShared.UidFont.Push();
             ImGui.TextUnformatted("Service Registration");
-            if (_uiShared.UidFontBuilt) ImGui.PopFont();
+            _uiShared.UidFont.Pop();
             ImGui.Separator();
             UiSharedService.TextWrapped("To be able to use Loporrit you will have to register an account.");
             UiSharedService.TextWrapped("Refer to the instructions at the location you obtained this plugin for more information or support.");

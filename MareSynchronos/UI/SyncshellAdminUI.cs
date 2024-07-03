@@ -61,7 +61,7 @@ public class SyncshellAdminUI : WindowMediatorSubscriberBase
 
         using var id = ImRaii.PushId("syncshell_admin_" + GroupFullInfo.GID);
 
-        using (ImRaii.PushFont(_uiSharedService.UidFont))
+        using (_uiSharedService.UidFont.Push())
             ImGui.TextUnformatted(GroupFullInfo.GroupAliasOrGID + " Administrative Panel");
 
         ImGui.Separator();

@@ -1,6 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using Glamourer.Api.Helpers;
@@ -21,13 +21,13 @@ namespace MareSynchronos.Interop;
 public sealed class IpcManager : DisposableMediatorSubscriberBase
 {
     private readonly ICallGateSubscriber<(int, int)> _customizePlusApiVersion;
-    private readonly ICallGateSubscriber<Character, (int, Guid?)> _customizePlusGetActiveProfile;
+    private readonly ICallGateSubscriber<ICharacter, (int, Guid?)> _customizePlusGetActiveProfile;
     private readonly ICallGateSubscriber<Guid, (int, string?)> _customizePlusGetProfileById;
-    private readonly ICallGateSubscriber<Character, Guid, object> _customizePlusOnScaleUpdate;
-    private readonly ICallGateSubscriber<Character, int> _customizePlusRevertCharacter;
-    private readonly ICallGateSubscriber<Character, string, (int, Guid?)> _customizePlusSetBodyScaleToCharacter;
+    private readonly ICallGateSubscriber<ICharacter, Guid, object> _customizePlusOnScaleUpdate;
+    private readonly ICallGateSubscriber<ICharacter, int> _customizePlusRevertCharacter;
+    private readonly ICallGateSubscriber<ICharacter, string, (int, Guid?)> _customizePlusSetBodyScaleToCharacter;
     private readonly ICallGateSubscriber<Guid, int> _customizePlusDeleteByUniqueId;
-    private readonly DalamudPluginInterface _pi;
+    private readonly IDalamudPluginInterface _pi;
     private readonly DalamudUtilService _dalamudUtil;
     private readonly Glamourer.Api.IpcSubscribers.ApiVersion _glamourerApiVersions;
     private readonly Glamourer.Api.IpcSubscribers.ApplyState? _glamourerApplyAll;
@@ -40,15 +40,15 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly ICallGateSubscriber<(int, int)> _heelsGetApiVersion;
     private readonly ICallGateSubscriber<string> _heelsGetOffset;
     private readonly ICallGateSubscriber<string, object?> _heelsOffsetUpdate;
-    private readonly ICallGateSubscriber<GameObject, string, object?> _heelsRegisterPlayer;
-    private readonly ICallGateSubscriber<GameObject, object?> _heelsUnregisterPlayer;
+    private readonly ICallGateSubscriber<IGameObject, string, object?> _heelsRegisterPlayer;
+    private readonly ICallGateSubscriber<IGameObject, object?> _heelsUnregisterPlayer;
     private readonly ICallGateSubscriber<(uint major, uint minor)> _honorificApiVersion;
-    private readonly ICallGateSubscriber<Character, object> _honorificClearCharacterTitle;
+    private readonly ICallGateSubscriber<ICharacter, object> _honorificClearCharacterTitle;
     private readonly ICallGateSubscriber<object> _honorificDisposing;
     private readonly ICallGateSubscriber<string> _honorificGetLocalCharacterTitle;
     private readonly ICallGateSubscriber<string, object> _honorificLocalCharacterTitleChanged;
     private readonly ICallGateSubscriber<object> _honorificReady;
-    private readonly ICallGateSubscriber<Character, string, object> _honorificSetCharacterTitle;
+    private readonly ICallGateSubscriber<ICharacter, string, object> _honorificSetCharacterTitle;
     private readonly ConcurrentDictionary<IntPtr, bool> _penumbraRedrawRequests = new();
     private readonly Penumbra.Api.Helpers.EventSubscriber _penumbraDispose;
     private readonly Penumbra.Api.Helpers.EventSubscriber<nint, string, string> _penumbraGameObjectResourcePathResolved;
@@ -82,9 +82,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private bool _useLegacyGlamourer = false;
 
     private readonly Glamourer.Api.IpcSubscribers.Legacy.ApiVersions _glamourerApiVersionLegacy;
-    private readonly ICallGateSubscriber<string, GameObject?, uint, object>? _glamourerApplyAllLegacy;
-    private readonly ICallGateSubscriber<GameObject?, string>? _glamourerGetAllCustomizationLegacy;
-    private readonly ICallGateSubscriber<Character?, uint, object?> _glamourerRevertLegacy;
+    private readonly ICallGateSubscriber<string, IGameObject?, uint, object>? _glamourerApplyAllLegacy;
+    private readonly ICallGateSubscriber<IGameObject?, string>? _glamourerGetAllCustomizationLegacy;
+    private readonly ICallGateSubscriber<ICharacter?, uint, object?> _glamourerRevertLegacy;
     private readonly Glamourer.Api.IpcSubscribers.Legacy.RevertLock _glamourerRevertByNameLegacy;
     private readonly Glamourer.Api.IpcSubscribers.Legacy.UnlockName _glamourerUnlockLegacy;
     private readonly Glamourer.Api.Helpers.EventSubscriber<int, nint, Lazy<string>>? _glamourerStateChangedLegacy;
@@ -99,7 +99,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly Penumbra.Api.IpcSubscribers.Legacy.RedrawObjectByIndex _penumbraRedrawLegacy;
     private readonly Penumbra.Api.IpcSubscribers.Legacy.GetGameObjectResourcePaths _penumbraResourcePathsLegacy;
 
-    public IpcManager(ILogger<IpcManager> logger, DalamudPluginInterface pi, DalamudUtilService dalamudUtil, MareMediator mediator) : base(logger, mediator)
+    public IpcManager(ILogger<IpcManager> logger, IDalamudPluginInterface pi, DalamudUtilService dalamudUtil, MareMediator mediator) : base(logger, mediator)
     {
         _pi = pi;
         _dalamudUtil = dalamudUtil;
@@ -148,34 +148,34 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         _glamourerStateChanged.Enable();
 
         _glamourerApiVersionLegacy = new(pi);
-        _glamourerApplyAllLegacy = pi.GetIpcSubscriber<string, GameObject?, uint, object>("Glamourer.ApplyAllToCharacterLock");
-        _glamourerGetAllCustomizationLegacy = pi.GetIpcSubscriber<GameObject?, string>("Glamourer.GetAllCustomizationFromCharacter");
-        _glamourerRevertLegacy = pi.GetIpcSubscriber<Character?, uint, object?>("Glamourer.RevertCharacterLock");
+        _glamourerApplyAllLegacy = pi.GetIpcSubscriber<string, IGameObject?, uint, object>("Glamourer.ApplyAllToCharacterLock");
+        _glamourerGetAllCustomizationLegacy = pi.GetIpcSubscriber<IGameObject?, string>("Glamourer.GetAllCustomizationFromCharacter");
+        _glamourerRevertLegacy = pi.GetIpcSubscriber<ICharacter?, uint, object?>("Glamourer.RevertCharacterLock");
         _glamourerRevertByNameLegacy = new(pi);
         _glamourerUnlockLegacy = new(pi);
 
         _heelsGetApiVersion = pi.GetIpcSubscriber<(int, int)>("SimpleHeels.ApiVersion");
         _heelsGetOffset = pi.GetIpcSubscriber<string>("SimpleHeels.GetLocalPlayer");
-        _heelsRegisterPlayer = pi.GetIpcSubscriber<GameObject, string, object?>("SimpleHeels.RegisterPlayer");
-        _heelsUnregisterPlayer = pi.GetIpcSubscriber<GameObject, object?>("SimpleHeels.UnregisterPlayer");
+        _heelsRegisterPlayer = pi.GetIpcSubscriber<IGameObject, string, object?>("SimpleHeels.RegisterPlayer");
+        _heelsUnregisterPlayer = pi.GetIpcSubscriber<IGameObject, object?>("SimpleHeels.UnregisterPlayer");
         _heelsOffsetUpdate = pi.GetIpcSubscriber<string, object?>("SimpleHeels.LocalChanged");
 
         _heelsOffsetUpdate.Subscribe(HeelsOffsetChange);
 
         _customizePlusApiVersion = pi.GetIpcSubscriber<(int, int)>("CustomizePlus.General.GetApiVersion");
-        _customizePlusGetActiveProfile = pi.GetIpcSubscriber<Character, (int, Guid?)>("CustomizePlus.Profile.GetActiveProfileIdOnCharacter");
+        _customizePlusGetActiveProfile = pi.GetIpcSubscriber<ICharacter, (int, Guid?)>("CustomizePlus.Profile.GetActiveProfileIdOnCharacter");
         _customizePlusGetProfileById = pi.GetIpcSubscriber<Guid, (int, string?)>("CustomizePlus.Profile.GetByUniqueId");
-        _customizePlusRevertCharacter = pi.GetIpcSubscriber<Character, int>("CustomizePlus.Profile.DeleteTemporaryProfileOnCharacter");
-        _customizePlusSetBodyScaleToCharacter = pi.GetIpcSubscriber<Character, string, (int, Guid?)>("CustomizePlus.Profile.SetTemporaryProfileOnCharacter");
-        _customizePlusOnScaleUpdate = pi.GetIpcSubscriber<Character, Guid, object>("CustomizePlus.Profile.OnUpdate");
+        _customizePlusRevertCharacter = pi.GetIpcSubscriber<ICharacter, int>("CustomizePlus.Profile.DeleteTemporaryProfileOnCharacter");
+        _customizePlusSetBodyScaleToCharacter = pi.GetIpcSubscriber<ICharacter, string, (int, Guid?)>("CustomizePlus.Profile.SetTemporaryProfileOnCharacter");
+        _customizePlusOnScaleUpdate = pi.GetIpcSubscriber<ICharacter, Guid, object>("CustomizePlus.Profile.OnUpdate");
         _customizePlusDeleteByUniqueId = pi.GetIpcSubscriber<Guid, int>("CustomizePlus.Profile.DeleteTemporaryProfileByUniqueId");
 
         _customizePlusOnScaleUpdate.Subscribe(OnCustomizePlusScaleChange);
 
         _honorificApiVersion = pi.GetIpcSubscriber<(uint, uint)>("Honorific.ApiVersion");
         _honorificGetLocalCharacterTitle = pi.GetIpcSubscriber<string>("Honorific.GetLocalCharacterTitle");
-        _honorificClearCharacterTitle = pi.GetIpcSubscriber<Character, object>("Honorific.ClearCharacterTitle");
-        _honorificSetCharacterTitle = pi.GetIpcSubscriber<Character, string, object>("Honorific.SetCharacterTitle");
+        _honorificClearCharacterTitle = pi.GetIpcSubscriber<ICharacter, object>("Honorific.ClearCharacterTitle");
+        _honorificSetCharacterTitle = pi.GetIpcSubscriber<ICharacter, string, object>("Honorific.SetCharacterTitle");
         _honorificLocalCharacterTitleChanged = pi.GetIpcSubscriber<string, object>("Honorific.LocalCharacterTitleChanged");
         _honorificDisposing = pi.GetIpcSubscriber<object>("Honorific.Disposing");
         _honorificReady = pi.GetIpcSubscriber<object>("Honorific.Ready");
@@ -231,7 +231,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             var gameObj = _dalamudUtil.CreateGameObject(character);
-            if (gameObj is Character c)
+            if (gameObj is ICharacter c)
             {
                 Logger.LogTrace("CustomizePlus reverting for {chara}", c.Address.ToString("X"));
                 _customizePlusRevertCharacter!.InvokeFunc(c);
@@ -254,7 +254,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         return await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             var gameObj = _dalamudUtil.CreateGameObject(character);
-            if (gameObj is Character c)
+            if (gameObj is ICharacter c)
             {
                 string decodedScale = Encoding.UTF8.GetString(Convert.FromBase64String(scale));
                 Logger.LogTrace("CustomizePlus applying for {chara}", c.Address.ToString("X"));
@@ -280,7 +280,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         var scale = await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             var gameObj = _dalamudUtil.CreateGameObject(character);
-            if (gameObj is Character c)
+            if (gameObj is ICharacter c)
             {
                 var res = _customizePlusGetActiveProfile.InvokeFunc(c);
                 Logger.LogTrace("CustomizePlus GetActiveProfile returned {err}", res.Item1);
@@ -341,7 +341,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             return await _dalamudUtil.RunOnFrameworkThread(() =>
             {
                 var gameObj = _dalamudUtil.CreateGameObject(character);
-                if (gameObj is Character c)
+                if (gameObj is ICharacter c)
                 {
                     if (_useLegacyGlamourer)
                         return _glamourerGetAllCustomizationLegacy.InvokeFunc(c) ?? string.Empty;
@@ -470,7 +470,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             var gameObj = _dalamudUtil.CreateGameObject(character);
-            if (gameObj is PlayerCharacter c)
+            if (gameObj is IPlayerCharacter c)
             {
                 Logger.LogTrace("Honorific removing for {addr}", c.Address.ToString("X"));
                 _honorificClearCharacterTitle!.InvokeAction(c);
@@ -494,7 +494,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             await _dalamudUtil.RunOnFrameworkThread(() =>
             {
                 var gameObj = _dalamudUtil.CreateGameObject(character);
-                if (gameObj is PlayerCharacter pc)
+                if (gameObj is IPlayerCharacter pc)
                 {
                     string honorificData = string.IsNullOrEmpty(honorificDataB64) ? string.Empty : Encoding.UTF8.GetString(Convert.FromBase64String(honorificDataB64));
                     if (string.IsNullOrEmpty(honorificData))
@@ -848,7 +848,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         Mediator.Publish(new HeelsOffsetMessage());
     }
 
-    private void OnCustomizePlusScaleChange(Character c, Guid g)
+    private void OnCustomizePlusScaleChange(ICharacter c, Guid g)
     {
         Mediator.Publish(new CustomizePlusMessage(c.Name.ToString() ?? string.Empty));
     }
@@ -889,7 +889,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             _penumbraRedraw!.Invoke(0, RedrawType.Redraw);
     }
 
-    private async Task PenumbraRedrawInternalAsync(ILogger logger, GameObjectHandler handler, Guid applicationId, Action<Character> action)
+    private async Task PenumbraRedrawInternalAsync(ILogger logger, GameObjectHandler handler, Guid applicationId, Action<ICharacter> action)
     {
         Mediator.Publish(new PenumbraStartRedrawMessage(handler.Address));
 

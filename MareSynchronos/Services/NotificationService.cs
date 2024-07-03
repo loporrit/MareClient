@@ -1,6 +1,6 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.MareConfiguration.Models;
@@ -11,13 +11,13 @@ namespace MareSynchronos.Services;
 
 public class NotificationService : DisposableMediatorSubscriberBase
 {
+    private readonly INotificationManager _notificationManager;
     private readonly IChatGui _chatGui;
     private readonly MareConfigService _configurationService;
-    private readonly UiBuilder _uiBuilder;
 
-    public NotificationService(ILogger<NotificationService> logger, MareMediator mediator, UiBuilder uiBuilder, IChatGui chatGui, MareConfigService configurationService) : base(logger, mediator)
+    public NotificationService(ILogger<NotificationService> logger, MareMediator mediator, INotificationManager notificationManager, IChatGui chatGui, MareConfigService configurationService) : base(logger, mediator)
     {
-        _uiBuilder = uiBuilder;
+        _notificationManager = notificationManager;
         _chatGui = chatGui;
         _configurationService = configurationService;
 
@@ -108,6 +108,12 @@ public class NotificationService : DisposableMediatorSubscriberBase
 
     private void ShowToast(NotificationMessage msg)
     {
-        _uiBuilder.AddNotification(msg.Message ?? string.Empty, "[LoporritSync] " + msg.Title, msg.Type, msg.TimeShownOnScreen);
+        var notification = new Notification{
+            Content = msg.Message ?? string.Empty,
+            Title = "[LoporritSync] " + msg.Title,
+            Type = msg.Type,
+            InitialDuration = TimeSpan.FromMilliseconds(msg.TimeShownOnScreen)
+        };
+        _notificationManager.AddNotification(notification);
     }
 }

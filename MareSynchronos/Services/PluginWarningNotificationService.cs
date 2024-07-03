@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Comparer;
 using MareSynchronos.Interop;

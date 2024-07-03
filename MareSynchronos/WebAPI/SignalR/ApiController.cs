@@ -1,4 +1,5 @@
-﻿using Dalamud.Utility;
+﻿using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Utility;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Extensions;
 using MareSynchronos.API.Dto;
@@ -179,7 +180,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
                             $"Your client is outdated ({currentClientVer.Major}.{currentClientVer.Minor}.{currentClientVer.Build}), current is: " +
                             $"{_connectionDto.CurrentClientVersion.Major}.{_connectionDto.CurrentClientVersion.Minor}.{_connectionDto.CurrentClientVersion.Build}. " +
                             $"This client version is incompatible and will not be able to connect. Please update your Loporrit client.",
-                            Dalamud.Interface.Internal.Notifications.NotificationType.Error));
+                            NotificationType.Error));
                     }
                     await StopConnection(ServerState.VersionMisMatch).ConfigureAwait(false);
                     return;
@@ -191,7 +192,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
                         $"Your client is outdated ({currentClientVer.Major}.{currentClientVer.Minor}.{currentClientVer.Build}), current is: " +
                         $"{_connectionDto.CurrentClientVersion.Major}.{_connectionDto.CurrentClientVersion.Minor}.{_connectionDto.CurrentClientVersion.Build}. " +
                         $"Please keep your Loporrit client up-to-date.",
-                        Dalamud.Interface.Internal.Notifications.NotificationType.Warning));
+                        NotificationType.Warning));
                 }
 
                 await LoadIninitialPairs().ConfigureAwait(false);

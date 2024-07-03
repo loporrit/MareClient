@@ -28,7 +28,7 @@ internal class ReportPopupHandler : IPopupHandler
 
     public void DrawContent()
     {
-        using (ImRaii.PushFont(_uiSharedService.UidFont))
+        using (_uiSharedService.UidFont.Push())
             UiSharedService.TextWrapped("Report " + _reportedPair!.UserData.AliasOrUID + " Profile");
 
         ImGui.InputTextMultiline("##reportReason", ref _reportReason, 500, new Vector2(500 - ImGui.GetStyle().ItemSpacing.X * 2, 200));

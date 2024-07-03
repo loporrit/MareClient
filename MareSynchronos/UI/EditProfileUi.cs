@@ -1,8 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.ImGuiFileDialog;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MareSynchronos.API.Data;
@@ -12,6 +11,8 @@ using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace MareSynchronos.UI;
 
@@ -20,7 +21,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
     private readonly ApiController _apiController;
     private readonly FileDialogManager _fileDialogManager;
     private readonly MareProfileManager _mareProfileManager;
-    private readonly UiBuilder _uiBuilder;
+    private readonly IUiBuilder _uiBuilder;
     private readonly UiSharedService _uiSharedService;
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private bool _adjustedForScollBarsLocalProfile = false;
@@ -33,7 +34,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
     private bool _wasOpen;
 
     public EditProfileUi(ILogger<EditProfileUi> logger, MareMediator mediator,
-        ApiController apiController, UiBuilder uiBuilder, UiSharedService uiSharedService,
+        ApiController apiController, IUiBuilder uiBuilder, UiSharedService uiSharedService,
         FileDialogManager fileDialogManager, ServerConfigurationManager serverConfigurationManager,
         MareProfileManager mareProfileManager) : base(logger, mediator, "Loporrit Edit Profile###LoporritSyncEditProfileUI")
     {
@@ -79,7 +80,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
         {
             _profileImage = profile.ImageData.Value;
             _pfpTextureWrap?.Dispose();
-            _pfpTextureWrap = _uiBuilder.LoadImage(_profileImage);
+            _pfpTextureWrap = _uiSharedService.LoadImage(_profileImage);
         }
 
         if (!string.Equals(_profileDescription, profile.Description, StringComparison.OrdinalIgnoreCase))
@@ -95,7 +96,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
 
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         ImGuiHelpers.ScaledRelativeSameLine(256, spacing);
-        ImGui.PushFont(_uiBuilder.GetGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis12)).ImFont);
+        _uiSharedService.GameFont.Push();
         var descriptionTextSize = ImGui.CalcTextSize(profile.Description, 256f);
         var childFrame = ImGuiHelpers.ScaledVector2(256 + ImGui.GetStyle().WindowPadding.X + ImGui.GetStyle().WindowBorderSize, 256);
         if (descriptionTextSize.Y > childFrame.Y)
@@ -115,7 +116,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
             UiSharedService.TextWrapped(profile.Description);
         }
         ImGui.EndChildFrame();
-        ImGui.PopFont();
+        _uiSharedService.GameFont.Pop();
 
         var nsfw = profile.IsNSFW;
         ImGui.BeginDisabled();
@@ -191,13 +192,12 @@ public class EditProfileUi : WindowMediatorSubscriberBase
         ImGui.SetCursorPosX(posX);
         ImGuiHelpers.ScaledRelativeSameLine(widthTextBox, ImGui.GetStyle().ItemSpacing.X);
         ImGui.TextUnformatted("Preview (approximate)");
-        ImGui.PushFont(_uiBuilder.GetGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis12)).ImFont);
-        ImGui.InputTextMultiline("##description", ref _descriptionText, 1500, ImGuiHelpers.ScaledVector2(widthTextBox, 200));
-        ImGui.PopFont();
+        using (_uiSharedService.GameFont.Push())
+            ImGui.InputTextMultiline("##description", ref _descriptionText, 1500, ImGuiHelpers.ScaledVector2(widthTextBox, 200));
 
         ImGui.SameLine();
 
-        ImGui.PushFont(_uiBuilder.GetGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis12)).ImFont);
+        _uiSharedService.GameFont.Push();
         var descriptionTextSizeLocal = ImGui.CalcTextSize(_descriptionText, 256f);
         var childFrameLocal = ImGuiHelpers.ScaledVector2(256 + ImGui.GetStyle().WindowPadding.X + ImGui.GetStyle().WindowBorderSize, 200);
         if (descriptionTextSizeLocal.Y > childFrameLocal.Y)
@@ -217,7 +217,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
             UiSharedService.TextWrapped(_descriptionText);
         }
         ImGui.EndChildFrame();
-        ImGui.PopFont();
+        _uiSharedService.GameFont.Pop();
 
         if (UiSharedService.NormalizedIconTextButton(FontAwesomeIcon.Save, "Save Description"))
         {

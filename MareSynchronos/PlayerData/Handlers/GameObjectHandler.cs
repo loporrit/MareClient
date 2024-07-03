@@ -1,5 +1,7 @@
-﻿using Dalamud.Memory;
+﻿using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
@@ -112,13 +114,13 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
     private ushort[] MainHandData { get; set; } = new ushort[3];
     private ushort[] OffHandData { get; set; } = new ushort[3];
 
-    public async Task ActOnFrameworkAfterEnsureNoDrawAsync(Action<Dalamud.Game.ClientState.Objects.Types.Character> act, CancellationToken token)
+    public async Task ActOnFrameworkAfterEnsureNoDrawAsync(Action<ICharacter> act, CancellationToken token)
     {
         while (await _dalamudUtil.RunOnFrameworkThread(() =>
                {
                    if (IsBeingDrawn()) return true;
                    var gameObj = _dalamudUtil.CreateGameObject(Address);
-                   if (gameObj is Dalamud.Game.ClientState.Objects.Types.Character chara)
+                   if (gameObj is ICharacter chara)
                    {
                        act.Invoke(chara);
                    }
@@ -147,7 +149,7 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
         return _getAddress.Invoke();
     }
 
-    public Dalamud.Game.ClientState.Objects.Types.GameObject? GetGameObject()
+    public IGameObject? GetGameObject()
     {
         return _dalamudUtil.CreateGameObject(Address);
     }
@@ -187,7 +189,7 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
         if (Address != IntPtr.Zero)
         {
             _ptrNullCounter = 0;
-            var drawObjAddr = (IntPtr)((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Address)->DrawObject;
+            var drawObjAddr = (IntPtr)((GameObject*)Address)->DrawObject;
             DrawObjectAddress = drawObjAddr;
         }
         else
@@ -209,7 +211,9 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
                 _clearCts = null;
             }
             var chara = (Character*)Address;
-            MemoryHelper.ReadStringNullTerminated((nint)chara->GameObject.Name, out var name);
+            string name;
+            fixed (byte* nameData = chara->GameObject.Name)
+                MemoryHelper.ReadStringNullTerminated((nint)nameData, out name);
             bool nameChange = !string.Equals(name, Name, StringComparison.Ordinal);
             if (nameChange)
             {
@@ -240,7 +244,8 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
             }
             else
             {
-                equipDiff = CompareAndUpdateEquipByteData((byte*)&chara->DrawData.Head);
+                fixed (EquipmentModelId* equipmentData = chara->DrawData.EquipmentModelIds)
+                    equipDiff = CompareAndUpdateEquipByteData((byte*)equipmentData);
                 if (equipDiff)
                     Logger.LogTrace("Checking [{this}] equip data from game obj, result: {diff}", this, equipDiff);
             }
@@ -259,7 +264,7 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
             {
                 var gender = ((Human*)DrawObjectAddress)->Customize.Sex;
                 var raceId = ((Human*)DrawObjectAddress)->Customize.Race;
-                var tribeId = ((Human*)DrawObjectAddress)->Customize.Clan;
+                var tribeId = ((Human*)DrawObjectAddress)->Customize.Tribe;
 
                 if (_isOwnedObject && ObjectKind == ObjectKind.Player
                     && (gender != Gender || raceId != RaceId || tribeId != TribeId))
@@ -270,13 +275,15 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
                     TribeId = tribeId;
                 }
 
-                customizeDiff = CompareAndUpdateCustomizeData(((Human*)DrawObjectAddress)->Customize.Data);
+                fixed (byte* customizeData = ((Human*)DrawObjectAddress)->Customize.Data)
+                    customizeDiff = CompareAndUpdateCustomizeData(customizeData);
                 if (customizeDiff)
                     Logger.LogTrace("Checking [{this}] customize data as human from draw obj, result: {diff}", this, customizeDiff);
             }
             else
             {
-                customizeDiff = CompareAndUpdateCustomizeData(chara->DrawData.CustomizeData.Data);
+                fixed (byte* customizeData = ((Human*)DrawObjectAddress)->Customize.Data)
+                    customizeDiff = CompareAndUpdateCustomizeData(customizeData);
                 if (customizeDiff)
                     Logger.LogTrace("Checking [{this}] customize data from game obj, result: {diff}", this, equipDiff);
             }
@@ -385,7 +392,7 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
 
     private unsafe IntPtr GetDrawObjUnsafe(nint curPtr)
     {
-        return (IntPtr)((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)curPtr)->DrawObject;
+        return (IntPtr)((GameObject*)curPtr)->DrawObject;
     }
 
     private bool IsBeingDrawn()
@@ -426,7 +433,7 @@ public sealed class GameObjectHandler : DisposableMediatorSubscriberBase
     {
         var drawObjZero = drawObj == IntPtr.Zero;
         if (drawObjZero) return DrawCondition.DrawObjectZero;
-        var renderFlags = (((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)curPtr)->RenderFlags) != 0x0;
+        var renderFlags = ((GameObject*)curPtr)->RenderFlags != 0x0;
         if (renderFlags) return DrawCondition.RenderFlags;
 
         if (ObjectKind == ObjectKind.Player)

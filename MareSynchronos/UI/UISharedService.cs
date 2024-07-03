@@ -2,10 +2,12 @@
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.ImGuiFileDialog;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.ManagedFontAtlas;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using ImGuiNET;
 using MareSynchronos.FileCache;
@@ -48,7 +50,8 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     private readonly DalamudUtilService _dalamudUtil;
     private readonly IpcManager _ipcManager;
     private readonly Dalamud.Localization _localization;
-    private readonly DalamudPluginInterface _pluginInterface;
+    private readonly IDalamudPluginInterface _pluginInterface;
+    private readonly ITextureProvider _textureProvider;
     private readonly Dictionary<string, object> _selectedComboItems = new(StringComparer.Ordinal);
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private bool _cacheDirectoryHasOtherFilesThanCache = false;
@@ -76,7 +79,8 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public UiSharedService(ILogger<UiSharedService> logger, IpcManager ipcManager, ApiController apiController,
         PeriodicFileScanner cacheScanner, FileDialogManager fileDialogManager,
-        MareConfigService configService, DalamudUtilService dalamudUtil, DalamudPluginInterface pluginInterface, Dalamud.Localization localization,
+        MareConfigService configService, DalamudUtilService dalamudUtil, IDalamudPluginInterface pluginInterface,
+        ITextureProvider textureProvider, Dalamud.Localization localization,
         ServerConfigurationManager serverManager, MareMediator mediator) : base(logger, mediator)
     {
         _ipcManager = ipcManager;
@@ -86,6 +90,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         _configService = configService;
         _dalamudUtil = dalamudUtil;
         _pluginInterface = pluginInterface;
+        _textureProvider = textureProvider;
         _localization = localization;
         _serverConfigurationManager = serverManager;
 
@@ -93,8 +98,14 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
         _isDirectoryWritable = IsDirectoryWritable(_configService.Current.CacheFolder);
 
-        _pluginInterface.UiBuilder.BuildFonts += BuildFont;
-        _pluginInterface.UiBuilder.RebuildFonts();
+        UidFont = _pluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+        {
+            e.OnPreBuild(tk => tk.AddDalamudAssetFont(Dalamud.DalamudAsset.NotoSansJpMedium, new()
+            {
+                SizePx = 35
+            }));
+        });
+        GameFont = _pluginInterface.UiBuilder.FontAtlas.NewGameFontHandle(new(GameFontFamilyAndSize.Axis12));
 
         Mediator.Subscribe<DelayedFrameworkUpdateMessage>(this, (_) =>
         {
@@ -118,9 +129,8 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public string PlayerName => _dalamudUtil.GetPlayerName();
 
-    public ImFontPtr UidFont { get; private set; }
-
-    public bool UidFontBuilt { get; private set; }
+    public IFontHandle UidFont { get; init; }
+    public IFontHandle GameFont { get; init; }
 
     public Dictionary<ushort, string> WorldData => _dalamudUtil.WorldData.Value;
 
@@ -283,6 +293,13 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     public static void FontText(string text, ImFontPtr font, Vector4? color = null)
     {
         using var pushedFont = ImRaii.PushFont(font);
+        using var pushedColor = ImRaii.PushColor(ImGuiCol.Text, Color(color ?? new Vector4(1, 1, 1, 1)), color != null);
+        ImGui.TextUnformatted(text);
+    }
+
+    public static void FontText(string text, IFontHandle font, Vector4? color = null)
+    {
+        using var pushedFont = font.Push();
         using var pushedColor = ImRaii.PushColor(ImGuiCol.Text, Color(color ?? new Vector4(1, 1, 1, 1)), color != null);
         ImGui.TextUnformatted(text);
     }
@@ -563,7 +580,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public void BigText(string text)
     {
-        using var font = ImRaii.PushFont(UidFont, UidFontBuilt);
+        using var font = UidFont.Push();
         ImGui.TextUnformatted(text);
     }
 
@@ -903,21 +920,9 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     [LibraryImport("user32")]
     internal static partial short GetKeyState(int nVirtKey);
 
-    internal ImFontPtr GetGameFontHandle()
-    {
-        return _pluginInterface.UiBuilder.GetGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis12)).ImFont;
-    }
-
     internal IDalamudTextureWrap LoadImage(byte[] imageData)
     {
-        return _pluginInterface.UiBuilder.LoadImage(imageData);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-
-        _pluginInterface.UiBuilder.BuildFonts -= BuildFont;
+        return _textureProvider.CreateFromImageAsync(imageData).Result;
     }
 
     private static void CenterWindow(float width, float height, ImGuiCond cond = ImGuiCond.None)
@@ -930,27 +935,4 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     [GeneratedRegex(@"^(?:[a-zA-Z]:\\[\w\s\-\\]+?|\/(?:[\w\s\-\/])+?)$", RegexOptions.ECMAScript)]
 #pragma warning restore MA0009 // Add regex evaluation timeout
     private static partial Regex PathRegex();
-
-    private void BuildFont()
-    {
-        var fontFile = Path.Combine(_pluginInterface.DalamudAssetDirectory.FullName, "UIRes", "NotoSansCJKjp-Medium.otf");
-        UidFontBuilt = false;
-
-        if (File.Exists(fontFile))
-        {
-            try
-            {
-                UidFont = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontFile, 35);
-                UidFontBuilt = true;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "Font failed to load. {fontFile}", fontFile);
-            }
-        }
-        else
-        {
-            Logger.LogDebug("Font doesn't exist. {fontFile}", fontFile);
-        }
-    }
 }

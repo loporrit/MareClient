@@ -1,5 +1,6 @@
-﻿using Dalamud.ContextMenu;
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Plugin.Services;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Comparer;
 using MareSynchronos.API.Data.Extensions;
@@ -18,14 +19,14 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     private readonly ConcurrentDictionary<UserData, Pair> _allClientPairs = new(UserDataComparer.Instance);
     private readonly ConcurrentDictionary<GroupData, GroupFullInfoDto> _allGroups = new(GroupDataComparer.Instance);
     private readonly MareConfigService _configurationService;
-    private readonly DalamudContextMenu _dalamudContextMenu;
+    private readonly IContextMenu _dalamudContextMenu;
     private readonly PairFactory _pairFactory;
     private Lazy<List<Pair>> _directPairsInternal;
     private Lazy<Dictionary<GroupFullInfoDto, List<Pair>>> _groupPairsInternal;
 
     public PairManager(ILogger<PairManager> logger, PairFactory pairFactory,
                 MareConfigService configurationService, MareMediator mediator,
-                DalamudContextMenu dalamudContextMenu) : base(logger, mediator)
+                IContextMenu dalamudContextMenu) : base(logger, mediator)
     {
         _pairFactory = pairFactory;
         _configurationService = configurationService;
@@ -35,7 +36,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         _directPairsInternal = DirectPairsLazy();
         _groupPairsInternal = GroupPairsLazy();
 
-        _dalamudContextMenu.OnOpenGameObjectContextMenu += DalamudContextMenuOnOnOpenGameObjectContextMenu;
+        _dalamudContextMenu.OnMenuOpened += DalamudContextMenuOnMenuOpened;
     }
 
     public List<Pair> DirectPairs => _directPairsInternal.Value;
@@ -329,14 +330,14 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         base.Dispose(disposing);
 
-        _dalamudContextMenu.OnOpenGameObjectContextMenu -= DalamudContextMenuOnOnOpenGameObjectContextMenu;
+        _dalamudContextMenu.OnMenuOpened -= DalamudContextMenuOnMenuOpened;
 
         DisposePairs();
     }
 
-    private void DalamudContextMenuOnOnOpenGameObjectContextMenu(GameObjectContextMenuOpenArgs args)
+    private void DalamudContextMenuOnMenuOpened(IMenuOpenedArgs args)
     {
-        if (args.ObjectId == 0xE000000) return;
+        /* TODO: Check empty target */
         if (!_configurationService.Current.EnableRightClickMenus) return;
 
         foreach (var pair in _allClientPairs.Where((p => p.Value.IsVisible)))

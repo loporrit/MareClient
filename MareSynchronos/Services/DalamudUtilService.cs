@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects;
-using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -13,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
-using DalamudGameObject = Dalamud.Game.ClientState.Objects.Types.GameObject;
+using DalamudGameObject = Dalamud.Game.ClientState.Objects.Types.IGameObject;
 
 namespace MareSynchronos.Services;
 
@@ -67,7 +66,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _performanceCollector = performanceCollector;
         WorldData = new(() =>
         {
-            return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.World>(Dalamud.ClientLanguage.English)!
+            return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.World>(Dalamud.Game.ClientLanguage.English)!
                 .Where(w => w.IsPublic && !w.Name.RawData.IsEmpty)
                 .ToDictionary(w => (ushort)w.RowId, w => w.Name.ToString());
         });
@@ -90,7 +89,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     }
 
     public unsafe GameObject* GposeTarget => TargetSystem.Instance()->GPoseTarget;
-    public unsafe Dalamud.Game.ClientState.Objects.Types.GameObject? GposeTargetGameObject => GposeTarget == null ? null : _objectTable[GposeTarget->ObjectIndex];
+    public unsafe DalamudGameObject? GposeTargetGameObject => GposeTarget == null ? null : _objectTable[GposeTarget->ObjectIndex];
     public bool IsAnythingDrawing { get; private set; } = false;
     public bool IsInCutscene { get; private set; } = false;
     public bool IsInGpose { get; private set; } = false;
@@ -103,13 +102,13 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
 
     public MareMediator Mediator { get; }
 
-    public Dalamud.Game.ClientState.Objects.Types.GameObject? CreateGameObject(IntPtr reference)
+    public DalamudGameObject? CreateGameObject(IntPtr reference)
     {
         EnsureIsOnFramework();
         return _objectTable.CreateObjectReference(reference);
     }
 
-    public async Task<Dalamud.Game.ClientState.Objects.Types.GameObject?> CreateGameObjectAsync(IntPtr reference)
+    public async Task<DalamudGameObject?> CreateGameObjectAsync(IntPtr reference)
     {
         return await RunOnFrameworkThread(() => _objectTable.CreateObjectReference(reference)).ConfigureAwait(false);
     }
@@ -119,12 +118,12 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         if (!_framework.IsInFrameworkUpdateThread) throw new InvalidOperationException("Can only be run on Framework");
     }
 
-    public Dalamud.Game.ClientState.Objects.Types.Character? GetCharacterFromObjectTableByIndex(int index)
+    public Dalamud.Game.ClientState.Objects.Types.ICharacter? GetCharacterFromObjectTableByIndex(int index)
     {
         EnsureIsOnFramework();
         var objTableObj = _objectTable[index];
         if (objTableObj!.ObjectKind != Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) return null;
-        return (Dalamud.Game.ClientState.Objects.Types.Character)objTableObj;
+        return (Dalamud.Game.ClientState.Objects.Types.ICharacter)objTableObj;
     }
 
     public unsafe IntPtr GetCompanion(IntPtr? playerPointer = null)
@@ -141,10 +140,10 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         return await RunOnFrameworkThread(() => GetCompanion(playerPointer)).ConfigureAwait(false);
     }
 
-    public Dalamud.Game.ClientState.Objects.Types.Character? GetGposeCharacterFromObjectTableByName(string name, bool onlyGposeCharacters = false)
+    public Dalamud.Game.ClientState.Objects.Types.ICharacter? GetGposeCharacterFromObjectTableByName(string name, bool onlyGposeCharacters = false)
     {
         EnsureIsOnFramework();
-        return (Dalamud.Game.ClientState.Objects.Types.Character?)_objectTable
+        return (Dalamud.Game.ClientState.Objects.Types.ICharacter?)_objectTable
             .FirstOrDefault(i => (!onlyGposeCharacters || i.ObjectIndex >= 200) && string.Equals(i.Name.ToString(), name, StringComparison.Ordinal));
     }
 
@@ -247,13 +246,13 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         return _objectTable.Any(f => f.Address == key);
     }
 
-    public bool IsObjectPresent(Dalamud.Game.ClientState.Objects.Types.GameObject? obj)
+    public bool IsObjectPresent(Dalamud.Game.ClientState.Objects.Types.IGameObject? obj)
     {
         EnsureIsOnFramework();
         return obj != null && obj.IsValid();
     }
 
-    public async Task<bool> IsObjectPresentAsync(Dalamud.Game.ClientState.Objects.Types.GameObject? obj)
+    public async Task<bool> IsObjectPresentAsync(Dalamud.Game.ClientState.Objects.Types.IGameObject? obj)
     {
         return await RunOnFrameworkThread(() => IsObjectPresent(obj)).ConfigureAwait(false);
     }
@@ -368,7 +367,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         Thread.Sleep(tick * 2);
     }
 
-    public Vector2 WorldToScreen(Dalamud.Game.ClientState.Objects.Types.GameObject? obj)
+    public Vector2 WorldToScreen(Dalamud.Game.ClientState.Objects.Types.IGameObject? obj)
     {
         if (obj == null) return Vector2.Zero;
         return _gameGui.WorldToScreen(obj.Position, out var screenPos) ? screenPos : Vector2.Zero;
@@ -382,12 +381,12 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
 
     private unsafe PlayerInfo GetPlayerInfo(DalamudGameObject chara)
     {
-        uint id = chara.ObjectId;
+        uint id = chara.EntityId;
 
         if (!_playerInfoCache.TryGetValue(id, out var info))
         {
             info.Character.ObjectId = id;
-            MemoryHelper.ReadStringNullTerminated((nint)((GameObject*)chara.Address)->Name, out info.Character.Name);
+            info.Character.Name = chara.Name.TextValue; // ?
             info.Character.HomeWorldId = ((BattleChara*)chara.Address)->Character.HomeWorld;
             info.Character.Address = chara.Address;
             info.Hash = Crypto.GetHash256(info.Character.Name + info.Character.HomeWorldId.ToString());

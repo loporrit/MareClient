@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.Command;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using MareSynchronos.FileCache;
 using MareSynchronos.MareConfiguration;
@@ -69,7 +70,7 @@ public sealed class CommandManagerService : IDisposable
             if (_apiController.ServerState == WebAPI.SignalR.Utils.ServerState.Disconnecting)
             {
                 _mediator.Publish(new NotificationMessage("Loporrit disconnecting", "Cannot use /toggle while Loporrit is still disconnecting",
-                    Dalamud.Interface.Internal.Notifications.NotificationType.Error));
+                    NotificationType.Error));
             }
 
             if (_serverConfigurationManager.CurrentServer == null) return;

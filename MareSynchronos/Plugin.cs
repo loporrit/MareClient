@@ -1,5 +1,4 @@
-﻿using Dalamud.ContextMenu;
-using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
@@ -44,9 +43,10 @@ public sealed class Plugin : IDalamudPlugin
             _realOnFrameworkUpdate(framework);
     }
 
-    public Plugin(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IDataManager gameData,
+    public Plugin(IDalamudPluginInterface pluginInterface, ICommandManager commandManager, IDataManager gameData,
         IFramework framework, IObjectTable objectTable, IClientState clientState, ICondition condition, IChatGui chatGui,
-        IGameGui gameGui, IDtrBar dtrBar, IToastGui toastGui, IPluginLog pluginLog, ITargetManager targetManager, IGameLifecycle addonLifecycle)
+        IGameGui gameGui, IDtrBar dtrBar, IToastGui toastGui, IPluginLog pluginLog, ITargetManager targetManager, IGameLifecycle addonLifecycle,
+        INotificationManager notificationManager, ITextureProvider textureProvider, IContextMenu contextMenu)
     {
         Plugin.Self = this;
         _hostBuilderRunTask = new HostBuilder()
@@ -67,7 +67,8 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<MareMediator>();
             collection.AddSingleton<FileCacheManager>();
             collection.AddSingleton<ServerConfigurationManager>();
-            collection.AddSingleton<PairManager>();
+            collection.AddSingleton<PairManager>((s) => new PairManager(s.GetRequiredService<ILogger<PairManager>>(), s.GetRequiredService<PairFactory>(),
+                s.GetRequiredService<MareConfigService>(), s.GetRequiredService<MareMediator>(), contextMenu));
             collection.AddSingleton<ApiController>();
             collection.AddSingleton<MareCharaFileManager>();
             collection.AddSingleton<PerformanceCollectorService>();
@@ -90,7 +91,6 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<FileCompactor>();
             collection.AddSingleton<TagHandler>();
             collection.AddSingleton<UidDisplayHandler>();
-            collection.AddSingleton((s) => new DalamudContextMenu(pluginInterface));
             collection.AddSingleton((s) => new DalamudUtilService(s.GetRequiredService<ILogger<DalamudUtilService>>(),
                 clientState, objectTable, framework, gameGui, toastGui, condition, gameData, targetManager,
                 s.GetRequiredService<MareMediator>(), s.GetRequiredService<PerformanceCollectorService>()));
@@ -136,10 +136,10 @@ public sealed class Plugin : IDalamudPlugin
                 s.GetRequiredService<ServerConfigurationManager>(), s.GetRequiredService<PeriodicFileScanner>(), s.GetRequiredService<ApiController>(),
                 s.GetRequiredService<MareMediator>(), s.GetRequiredService<MareConfigService>()));
             collection.AddScoped((s) => new NotificationService(s.GetRequiredService<ILogger<NotificationService>>(),
-                s.GetRequiredService<MareMediator>(), pluginInterface.UiBuilder, chatGui, s.GetRequiredService<MareConfigService>()));
+                s.GetRequiredService<MareMediator>(), notificationManager, chatGui, s.GetRequiredService<MareConfigService>()));
             collection.AddScoped((s) => new UiSharedService(s.GetRequiredService<ILogger<UiSharedService>>(), s.GetRequiredService<IpcManager>(), s.GetRequiredService<ApiController>(),
                 s.GetRequiredService<PeriodicFileScanner>(), s.GetRequiredService<FileDialogManager>(), s.GetRequiredService<MareConfigService>(), s.GetRequiredService<DalamudUtilService>(),
-                pluginInterface, s.GetRequiredService<Dalamud.Localization>(), s.GetRequiredService<ServerConfigurationManager>(), s.GetRequiredService<MareMediator>()));
+                pluginInterface, textureProvider, s.GetRequiredService<Dalamud.Localization>(), s.GetRequiredService<ServerConfigurationManager>(), s.GetRequiredService<MareMediator>()));
 
             collection.AddHostedService(p => p.GetRequiredService<MareMediator>());
             collection.AddHostedService(p => p.GetRequiredService<ConfigurationMigrator>());
