@@ -802,7 +802,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         bool penumbraAvailable = false;
         try
         {
-            penumbraAvailable = (_pi.InstalledPlugins
+            bool pluginFound = (_pi.InstalledPlugins
                 .FirstOrDefault(p => string.Equals(p.InternalName, "Penumbra", StringComparison.OrdinalIgnoreCase))
                 ?.Version ?? new Version(0, 0, 0, 0)) >= new Version(1, 0, 1, 0);
             try
@@ -814,7 +814,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             {
                 _useLegacyPenumbraApi = true;
             }
-            penumbraAvailable &= _penumbraEnabled.Invoke();
+            penumbraAvailable = pluginFound && _penumbraEnabled.Invoke();
             _shownPenumbraUnavailable = _shownPenumbraUnavailable && !penumbraAvailable;
             return penumbraAvailable;
         }
@@ -880,8 +880,8 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     private void PenumbraInit()
     {
-        _penumbraAvailable = true;
         PenumbraModDirectory = _penumbraResolveModDir.Invoke();
+        _penumbraAvailable = true;
         Mediator.Publish(new PenumbraInitializedMessage());
         if (_useLegacyPenumbraApi)
             _penumbraRedrawLegacy.Invoke(0, RedrawType.Redraw);
