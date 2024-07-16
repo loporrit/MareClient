@@ -718,6 +718,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     private bool CheckCustomizePlusApiInternal()
     {
+        return false;
         try
         {
             var version = _customizePlusApiVersion.InvokeFunc();
@@ -775,6 +776,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     private bool CheckHeelsApiInternal()
     {
+        return false;
         try
         {
             return _heelsGetApiVersion.InvokeFunc() is { Item1: 1, Item2: >= 0 };
@@ -787,6 +789,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     private bool CheckHonorificApiInternal()
     {
+        return false;
         try
         {
             return _honorificApiVersion.InvokeFunc() is { Item1: 2, Item2: >= 0 };
