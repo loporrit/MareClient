@@ -40,15 +40,15 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly ICallGateSubscriber<(int, int)> _heelsGetApiVersion;
     private readonly ICallGateSubscriber<string> _heelsGetOffset;
     private readonly ICallGateSubscriber<string, object?> _heelsOffsetUpdate;
-    private readonly ICallGateSubscriber<IGameObject, string, object?> _heelsRegisterPlayer;
-    private readonly ICallGateSubscriber<IGameObject, object?> _heelsUnregisterPlayer;
+    private readonly ICallGateSubscriber<int, string, object?> _heelsRegisterPlayer;
+    private readonly ICallGateSubscriber<int, object?> _heelsUnregisterPlayer;
     private readonly ICallGateSubscriber<(uint major, uint minor)> _honorificApiVersion;
-    private readonly ICallGateSubscriber<ICharacter, object> _honorificClearCharacterTitle;
+    private readonly ICallGateSubscriber<int, object> _honorificClearCharacterTitle;
     private readonly ICallGateSubscriber<object> _honorificDisposing;
     private readonly ICallGateSubscriber<string> _honorificGetLocalCharacterTitle;
     private readonly ICallGateSubscriber<string, object> _honorificLocalCharacterTitleChanged;
     private readonly ICallGateSubscriber<object> _honorificReady;
-    private readonly ICallGateSubscriber<ICharacter, string, object> _honorificSetCharacterTitle;
+    private readonly ICallGateSubscriber<int, string, object> _honorificSetCharacterTitle;
     private readonly ConcurrentDictionary<IntPtr, bool> _penumbraRedrawRequests = new();
     private readonly Penumbra.Api.Helpers.EventSubscriber _penumbraDispose;
     private readonly Penumbra.Api.Helpers.EventSubscriber<nint, string, string> _penumbraGameObjectResourcePathResolved;
@@ -156,8 +156,8 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         _heelsGetApiVersion = pi.GetIpcSubscriber<(int, int)>("SimpleHeels.ApiVersion");
         _heelsGetOffset = pi.GetIpcSubscriber<string>("SimpleHeels.GetLocalPlayer");
-        _heelsRegisterPlayer = pi.GetIpcSubscriber<IGameObject, string, object?>("SimpleHeels.RegisterPlayer");
-        _heelsUnregisterPlayer = pi.GetIpcSubscriber<IGameObject, object?>("SimpleHeels.UnregisterPlayer");
+        _heelsRegisterPlayer = pi.GetIpcSubscriber<int, string, object?>("SimpleHeels.RegisterPlayer");
+        _heelsUnregisterPlayer = pi.GetIpcSubscriber<int, object?>("SimpleHeels.UnregisterPlayer");
         _heelsOffsetUpdate = pi.GetIpcSubscriber<string, object?>("SimpleHeels.LocalChanged");
 
         _heelsOffsetUpdate.Subscribe(HeelsOffsetChange);
@@ -174,8 +174,8 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         _honorificApiVersion = pi.GetIpcSubscriber<(uint, uint)>("Honorific.ApiVersion");
         _honorificGetLocalCharacterTitle = pi.GetIpcSubscriber<string>("Honorific.GetLocalCharacterTitle");
-        _honorificClearCharacterTitle = pi.GetIpcSubscriber<ICharacter, object>("Honorific.ClearCharacterTitle");
-        _honorificSetCharacterTitle = pi.GetIpcSubscriber<ICharacter, string, object>("Honorific.SetCharacterTitle");
+        _honorificClearCharacterTitle = pi.GetIpcSubscriber<int, object>("Honorific.ClearCharacterTitle");
+        _honorificSetCharacterTitle = pi.GetIpcSubscriber<int, string, object>("Honorific.SetCharacterTitle");
         _honorificLocalCharacterTitleChanged = pi.GetIpcSubscriber<string, object>("Honorific.LocalCharacterTitleChanged");
         _honorificDisposing = pi.GetIpcSubscriber<object>("Honorific.Disposing");
         _honorificReady = pi.GetIpcSubscriber<object>("Honorific.Ready");
@@ -445,7 +445,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (gameObj != null)
             {
                 Logger.LogTrace("Restoring Heels data to {chara}", character.ToString("X"));
-                _heelsUnregisterPlayer.InvokeAction(gameObj);
+                _heelsUnregisterPlayer.InvokeAction(gameObj.ObjectIndex);
             }
         }).ConfigureAwait(false);
     }
@@ -459,7 +459,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (gameObj != null)
             {
                 Logger.LogTrace("Applying Heels data to {chara}", character.ToString("X"));
-                _heelsRegisterPlayer.InvokeAction(gameObj, data);
+                _heelsRegisterPlayer.InvokeAction(gameObj.ObjectIndex, data);
             }
         }).ConfigureAwait(false);
     }
@@ -473,7 +473,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (gameObj is IPlayerCharacter c)
             {
                 Logger.LogTrace("Honorific removing for {addr}", c.Address.ToString("X"));
-                _honorificClearCharacterTitle!.InvokeAction(c);
+                _honorificClearCharacterTitle!.InvokeAction(c.ObjectIndex);
             }
         }).ConfigureAwait(false);
     }
@@ -499,11 +499,11 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
                     string honorificData = string.IsNullOrEmpty(honorificDataB64) ? string.Empty : Encoding.UTF8.GetString(Convert.FromBase64String(honorificDataB64));
                     if (string.IsNullOrEmpty(honorificData))
                     {
-                        _honorificClearCharacterTitle!.InvokeAction(pc);
+                        _honorificClearCharacterTitle!.InvokeAction(pc.ObjectIndex);
                     }
                     else
                     {
-                        _honorificSetCharacterTitle!.InvokeAction(pc, honorificData);
+                        _honorificSetCharacterTitle!.InvokeAction(pc.ObjectIndex, honorificData);
                     }
                 }
             }).ConfigureAwait(false);
@@ -776,10 +776,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     private bool CheckHeelsApiInternal()
     {
-        return false;
         try
         {
-            return _heelsGetApiVersion.InvokeFunc() is { Item1: 1, Item2: >= 0 };
+            return _heelsGetApiVersion.InvokeFunc() is { Item1: 2, Item2: >= 0 };
         }
         catch
         {
@@ -789,10 +788,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     private bool CheckHonorificApiInternal()
     {
-        return false;
         try
         {
-            return _honorificApiVersion.InvokeFunc() is { Item1: 2, Item2: >= 0 };
+            return _honorificApiVersion.InvokeFunc() is { Item1: 3, Item2: >= 0 };
         }
         catch
         {

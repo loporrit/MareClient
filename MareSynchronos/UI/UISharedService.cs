@@ -763,7 +763,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.SameLine();
         AttachToolTip($"Glamourer is " + (_glamourerExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
-#if false
+
         if (intro)
         {
             ImGui.SetWindowFontScale(0.8f);
@@ -784,6 +784,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         AttachToolTip($"SimpleHeels is " + (_heelsExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
 
+#if false
         ImGui.SameLine();
         ImGui.TextUnformatted("Customize+");
         ImGui.SameLine();
@@ -791,6 +792,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.SameLine();
         AttachToolTip($"Customize+ is " + (_customizePlusExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
+#endif
 
         ImGui.SameLine();
         ImGui.TextUnformatted("Honorific");
@@ -799,7 +801,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.SameLine();
         AttachToolTip($"Honorific is " + (_honorificExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
-#endif
+
         if (!_penumbraExists || !_glamourerExists)
         {
             ImGui.TextColored(ImGuiColors.DalamudRed, "You need to install both Penumbra and Glamourer and keep them up to date to use Loporrit.");
