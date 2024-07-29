@@ -784,7 +784,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         AttachToolTip($"SimpleHeels is " + (_heelsExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
 
-#if false
         ImGui.SameLine();
         ImGui.TextUnformatted("Customize+");
         ImGui.SameLine();
@@ -792,7 +791,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.SameLine();
         AttachToolTip($"Customize+ is " + (_customizePlusExists ? "available and up to date." : "unavailable or not up to date."));
         ImGui.Spacing();
-#endif
 
         ImGui.SameLine();
         ImGui.TextUnformatted("Honorific");
