@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="!Exists('..\Penumbra.Api\Penumbra.Api.csproj')">
-    <PackageReference Include="Penumbra.Api" Version="5.2.0" />
+    <PackageReference Include="Penumbra.Api" Version="5.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition="Exists('..\Glamourer.Api\Glamourer.Api.csproj')">
@@ -62,7 +62,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="!Exists('..\Glamourer.Api\Glamourer.Api.csproj')">
-    <PackageReference Include="Glamourer.Api" Version="2.1.0" />
+    <PackageReference Include="Glamourer.Api" Version="2.2.0" />
   </ItemGroup>
 
   <PropertyGroup>
