@@ -13,7 +13,7 @@ namespace MareSynchronos.PlayerData.Factories;
 
 public class PlayerDataFactory
 {
-    private static readonly string[] _allowedExtensionsForGamePaths = [".mdl", ".tex", ".mtrl", ".tmb", ".pap", ".avfx", ".atex", ".sklb", ".eid", ".phyb", ".scd", ".skp", ".shpk"];
+    private static readonly string[] _allowedExtensionsForGamePaths = [".mdl", ".tex", ".mtrl", ".tmb", ".pap", ".avfx", ".atex", ".sklb", ".eid", ".phyb", ".pbd", ".scd", ".skp", ".shpk"];
     private readonly DalamudUtilService _dalamudUtil;
     private readonly FileCacheManager _fileCacheManager;
     private readonly IpcManager _ipcManager;

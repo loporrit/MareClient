@@ -210,7 +210,7 @@ public sealed class PeriodicFileScanner : DisposableMediatorSubscriberBase
         var previousThreadPriority = Thread.CurrentThread.Priority;
         Thread.CurrentThread.Priority = ThreadPriority.Lowest;
         Logger.LogDebug("Getting files from {penumbra} and {storage}", penumbraDir, _configService.Current.CacheFolder);
-        string[] ext = [".mdl", ".tex", ".mtrl", ".tmb", ".pap", ".avfx", ".atex", ".sklb", ".eid", ".phyb", ".scd", ".skp", ".shpk"];
+        string[] ext = [".mdl", ".tex", ".mtrl", ".tmb", ".pap", ".avfx", ".atex", ".sklb", ".eid", ".phyb", ".pbd", ".scd", ".skp", ".shpk"];
 
         Dictionary<string, string[]> penumbraFiles = new(StringComparer.Ordinal);
         foreach (var folder in Directory.EnumerateDirectories(penumbraDir!))
