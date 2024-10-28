@@ -59,36 +59,39 @@ public class Pair
 
     public void AddContextMenu(IMenuOpenedArgs args)
     {
-        if (CachedPlayer == null || true /* TODO: Check target */ || IsPaused) return;
+        if (CachedPlayer == null || (args.Target is not MenuTargetDefault target) || target.TargetObjectId != CachedPlayer.PlayerCharacterId || IsPaused) return;
 
         args.AddMenuItem(new MenuItem()
         {
             Name = "Open Profile",
             OnClicked = (a) => _mediator.Publish(new ProfileOpenStandaloneMessage(this)),
             PrefixColor = 559,
-            PrefixChar = '',
+            PrefixChar = 'L'
         });
         args.AddMenuItem(new MenuItem()
         {
             Name = "Reapply last data",
             OnClicked = (a) => ApplyLastReceivedData(forced: true),
             PrefixColor = 559,
-            PrefixChar = '',
+            PrefixChar = 'L',
         });
-        args.AddMenuItem(new MenuItem()
+        if (UserPair != null)
         {
-            Name = "Change Permissions",
-            OnClicked = (a) => _mediator.Publish(new OpenPermissionWindow(this)),
-            PrefixColor = 559,
-            PrefixChar = '',
-        });
-        args.AddMenuItem(new MenuItem()
-        {
-            Name = "Cycle pause state",
-            OnClicked = (a) => _mediator.Publish(new CyclePauseMessage(UserData)),
-            PrefixColor = 559,
-            PrefixChar = '',
-        });
+            args.AddMenuItem(new MenuItem()
+            {
+                Name = "Change Permissions",
+                OnClicked = (a) => _mediator.Publish(new OpenPermissionWindow(this)),
+                PrefixColor = 559,
+                PrefixChar = 'L',
+            });
+            args.AddMenuItem(new MenuItem()
+            {
+                Name = "Cycle pause state",
+                OnClicked = (a) => _mediator.Publish(new CyclePauseMessage(UserData)),
+                PrefixColor = 559,
+                PrefixChar = 'L',
+            });
+        }
     }
 
     public void ApplyData(OnlineUserCharaDataDto data)
