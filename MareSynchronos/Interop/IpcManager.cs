@@ -721,7 +721,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         try
         {
             var version = _customizePlusApiVersion.InvokeFunc();
-            if (version.Item1 == 5 && version.Item2 >= 0) return true;
+            if (version.Item1 == 6 && version.Item2 >= 0) return true;
             return false;
         }
         catch
