@@ -66,8 +66,8 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _performanceCollector = performanceCollector;
         WorldData = new(() =>
         {
-            return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.World>(Dalamud.Game.ClientLanguage.English)!
-                .Where(w => !w.Name.RawData.IsEmpty && w.DataCenter.Row != 0 && (w.IsPublic || char.IsUpper((char)w.Name.RawData[0])))
+            return gameData.GetExcelSheet<Lumina.Excel.Sheets.World>(Dalamud.Game.ClientLanguage.English)!
+                .Where(w => w.Name.ByteLength > 0 && w.DataCenter.RowId != 0 && (w.IsPublic || char.IsUpper((char)w.Name.Data.Span[0])))
                 .ToDictionary(w => (ushort)w.RowId, w => w.Name.ToString());
         });
         mediator.Subscribe<TargetPairMessage>(this, async (msg) =>
@@ -222,13 +222,13 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public uint GetHomeWorldId()
     {
         EnsureIsOnFramework();
-        return _clientState.LocalPlayer!.HomeWorld.Id;
+        return _clientState.LocalPlayer!.HomeWorld.RowId;
     }
 
     public uint GetWorldId()
     {
         EnsureIsOnFramework();
-        return _clientState.LocalPlayer!.CurrentWorld.Id;
+        return _clientState.LocalPlayer!.CurrentWorld.RowId;
     }
 
     public async Task<uint> GetWorldIdAsync()
@@ -304,7 +304,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _framework.Update += LoporritSync.Plugin.Self.OnFrameworkUpdate;
         if (IsLoggedIn)
         {
-            _classJobId = _clientState.LocalPlayer!.ClassJob.Id;
+            _classJobId = _clientState.LocalPlayer!.ClassJob.RowId;
         }
 
         return Task.CompletedTask;
