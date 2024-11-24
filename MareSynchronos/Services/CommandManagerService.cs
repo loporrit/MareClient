@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.Command;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using MareSynchronos.FileCache;
@@ -8,6 +9,7 @@ using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.UI;
 using MareSynchronos.WebAPI;
 using System.Globalization;
+using System.Text;
 
 namespace MareSynchronos.Services;
 
@@ -16,22 +18,27 @@ public sealed class CommandManagerService : IDisposable
     private const string _commandName = "/sync";
     private const string _commandName2 = "/loporrit";
 
+    private const string _ssCommandPrefix = "/ss";
+    private const int _ssCommandMaxNumber = 50;
+
     private readonly ApiController _apiController;
     private readonly ICommandManager _commandManager;
     private readonly MareMediator _mediator;
     private readonly MareConfigService _mareConfigService;
     private readonly PerformanceCollectorService _performanceCollectorService;
     private readonly PeriodicFileScanner _periodicFileScanner;
+    private readonly ChatService _chatService;
     private readonly ServerConfigurationManager _serverConfigurationManager;
 
     public CommandManagerService(ICommandManager commandManager, PerformanceCollectorService performanceCollectorService,
-        ServerConfigurationManager serverConfigurationManager, PeriodicFileScanner periodicFileScanner,
+        ServerConfigurationManager serverConfigurationManager, PeriodicFileScanner periodicFileScanner, ChatService chatService,
         ApiController apiController, MareMediator mediator, MareConfigService mareConfigService)
     {
         _commandManager = commandManager;
         _performanceCollectorService = performanceCollectorService;
         _serverConfigurationManager = serverConfigurationManager;
         _periodicFileScanner = periodicFileScanner;
+        _chatService = chatService;
         _apiController = apiController;
         _mediator = mediator;
         _mareConfigService = mareConfigService;
@@ -43,12 +50,24 @@ public sealed class CommandManagerService : IDisposable
         {
             HelpMessage = "Opens the Loporrit UI"
         });
+
+        // Lazy registration of all possible /ss# commands which tbf is what the game does for linkshells anyway
+        for (int i = 1; i <= _ssCommandMaxNumber; ++i)
+        {
+            _commandManager.AddHandler($"{_ssCommandPrefix}{i}", new CommandInfo(OnChatCommand)
+            {
+                ShowInHelp = false
+            });
+        }
     }
 
     public void Dispose()
     {
         _commandManager.RemoveHandler(_commandName);
         _commandManager.RemoveHandler(_commandName2);
+
+        for (int i = 1; i <= _ssCommandMaxNumber; ++i)
+            _commandManager.RemoveHandler($"{_ssCommandPrefix}{i}");
     }
 
     private void OnCommand(string command, string args)
@@ -114,6 +133,25 @@ public sealed class CommandManagerService : IDisposable
         else if (string.Equals(splitArgs[0], "analyze", StringComparison.OrdinalIgnoreCase))
         {
             _mediator.Publish(new UiToggleMessage(typeof(DataAnalysisUi)));
+        }
+    }
+
+    private void OnChatCommand(string command, string args)
+    {
+        if (_mareConfigService.Current.DisableSyncshellChat)
+            return;
+
+        int shellNumber = int.Parse(command[_ssCommandPrefix.Length..]);
+
+        if (args.Length == 0)
+        {
+            _chatService.SwitchChatShell(shellNumber);
+        }
+        else
+        {
+            // FIXME: Chat content seems to already be stripped of any special characters here?
+            byte[] chatBytes = Encoding.UTF8.GetBytes(args);
+            _chatService.SendChatShell(shellNumber, chatBytes);
         }
     }
 }

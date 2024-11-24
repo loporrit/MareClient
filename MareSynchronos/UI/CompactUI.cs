@@ -15,6 +15,7 @@ using MareSynchronos.API.Dto.User;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.PlayerData.Handlers;
 using MareSynchronos.PlayerData.Pairs;
+using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.UI.Components;
@@ -38,6 +39,7 @@ public class CompactUi : WindowMediatorSubscriberBase
     private readonly GroupPanel _groupPanel;
     private readonly PairGroupsUi _pairGroupsUi;
     private readonly PairManager _pairManager;
+    private readonly ChatService _chatService;
     private readonly SelectGroupForPairUi _selectGroupForPairUi;
     private readonly SelectPairForGroupUi _selectPairsForGroupUi;
     private readonly ServerConfigurationManager _serverManager;
@@ -56,19 +58,20 @@ public class CompactUi : WindowMediatorSubscriberBase
     private bool _showSyncShells;
     private bool _wasOpen;
 
-    public CompactUi(ILogger<CompactUi> logger, UiSharedService uiShared, MareConfigService configService, ApiController apiController, PairManager pairManager,
+    public CompactUi(ILogger<CompactUi> logger, UiSharedService uiShared, MareConfigService configService, ApiController apiController, PairManager pairManager, ChatService chatService,
         ServerConfigurationManager serverManager, MareMediator mediator, FileUploadManager fileTransferManager, UidDisplayHandler uidDisplayHandler) : base(logger, mediator, "###LoporritSyncMainUI")
     {
         _uiShared = uiShared;
         _configService = configService;
         _apiController = apiController;
         _pairManager = pairManager;
+        _chatService = chatService;
         _serverManager = serverManager;
         _fileTransferManager = fileTransferManager;
         _uidDisplayHandler = uidDisplayHandler;
         var tagHandler = new TagHandler(_serverManager);
 
-        _groupPanel = new(this, uiShared, _pairManager, uidDisplayHandler, _serverManager);
+        _groupPanel = new(this, uiShared, _pairManager, _chatService, uidDisplayHandler, _configService, _serverManager);
         _selectGroupForPairUi = new(tagHandler, uidDisplayHandler);
         _selectPairsForGroupUi = new(tagHandler, uidDisplayHandler);
         _pairGroupsUi = new(configService, tagHandler, uidDisplayHandler, apiController, _selectPairsForGroupUi);

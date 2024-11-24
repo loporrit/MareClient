@@ -1,4 +1,5 @@
-﻿using MareSynchronos.API.Dto.Group;
+﻿using MareSynchronos.API.Data;
+using MareSynchronos.API.Dto.Group;
 using MareSynchronos.WebAPI.SignalR.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -34,6 +35,12 @@ public partial class ApiController
     {
         CheckConnection();
         return await _mareHub!.InvokeAsync<bool>(nameof(GroupChangePassword), groupPassword).ConfigureAwait(false);
+    }
+
+    public async Task GroupChatSendMsg(GroupDto group, ChatMessage message)
+    {
+        CheckConnection();
+        await _mareHub!.SendAsync(nameof(GroupChatSendMsg), group, message).ConfigureAwait(false);
     }
 
     public async Task GroupClear(GroupDto group)

@@ -15,14 +15,16 @@ public class ServerConfigurationManager
     private readonly MareMediator _mareMediator;
     private readonly NotesConfigService _notesConfig;
     private readonly ServerTagConfigService _serverTagConfig;
+    private readonly SyncshellConfigService _syncshellConfig;
 
     public ServerConfigurationManager(ILogger<ServerConfigurationManager> logger, ServerConfigService configService,
-        ServerTagConfigService serverTagConfig, NotesConfigService notesConfig, DalamudUtilService dalamudUtil,
-        MareMediator mareMediator)
+        ServerTagConfigService serverTagConfig, SyncshellConfigService syncshellConfig, NotesConfigService notesConfig,
+        DalamudUtilService dalamudUtil, MareMediator mareMediator)
     {
         _logger = logger;
         _configService = configService;
         _serverTagConfig = serverTagConfig;
+        _syncshellConfig = syncshellConfig;
         _notesConfig = notesConfig;
         _dalamudUtil = dalamudUtil;
         _mareMediator = mareMediator;
@@ -244,6 +246,18 @@ public class ServerConfigurationManager
         return CurrentServerTagStorage().ServerAvailablePairTags;
     }
 
+    internal int GetShellNumberForGid(string gid)
+    {
+        if (CurrentSyncshellStorage().GidShellConfig.TryGetValue(gid, out var config))
+        {
+            return config.ShellNumber;
+        }
+
+        int newNumber = CurrentSyncshellStorage().GidShellConfig.Count > 0 ? CurrentSyncshellStorage().GidShellConfig.Select(x => x.Value.ShellNumber).Max() + 1 : 1;
+        SetShellNumberForGid(gid, newNumber, false);
+        return newNumber;
+    }
+
     internal Dictionary<string, List<string>> GetUidServerPairedUserTags()
     {
         return CurrentServerTagStorage().UidServerPairedUserTags;
@@ -345,6 +359,25 @@ public class ServerConfigurationManager
         _notesConfig.Save();
     }
 
+    internal void SetShellNumberForGid(string gid, int number, bool save = true)
+    {
+        if (string.IsNullOrEmpty(gid)) return;
+
+        if (CurrentSyncshellStorage().GidShellConfig.TryGetValue(gid, out var config))
+        {
+            config.ShellNumber = number;
+        }
+        else
+        {
+            CurrentSyncshellStorage().GidShellConfig.Add(gid, new(){
+                ShellNumber = number
+            });
+        }
+
+        if (save)
+            _syncshellConfig.Save();
+    }
+
     private ServerNotesStorage CurrentNotesStorage()
     {
         TryCreateCurrentNotesStorage();
@@ -355,6 +388,12 @@ public class ServerConfigurationManager
     {
         TryCreateCurrentServerTagStorage();
         return _serverTagConfig.Current.ServerTagStorage[CurrentApiUrl];
+    }
+
+    private ServerShellStorage CurrentSyncshellStorage()
+    {
+        TryCreateCurrentSyncshellStorage();
+        return _syncshellConfig.Current.ServerShellStorage[CurrentApiUrl];
     }
 
     private void EnsureMainExists()
@@ -404,6 +443,14 @@ public class ServerConfigurationManager
         if (!_serverTagConfig.Current.ServerTagStorage.ContainsKey(CurrentApiUrl))
         {
             _serverTagConfig.Current.ServerTagStorage[CurrentApiUrl] = new();
+        }
+    }
+
+    private void TryCreateCurrentSyncshellStorage()
+    {
+        if (!_syncshellConfig.Current.ServerShellStorage.ContainsKey(CurrentApiUrl))
+        {
+            _syncshellConfig.Current.ServerShellStorage[CurrentApiUrl] = new();
         }
     }
 }

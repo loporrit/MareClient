@@ -1,4 +1,5 @@
-﻿using MareSynchronos.MareConfiguration;
+﻿using MareSynchronos.API.Dto.Group;
+using MareSynchronos.MareConfiguration;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;

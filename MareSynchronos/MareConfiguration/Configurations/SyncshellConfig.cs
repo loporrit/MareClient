@@ -3,8 +3,8 @@
 namespace MareSynchronos.MareConfiguration.Configurations;
 
 [Serializable]
-public class UidNotesConfig : IMareConfiguration
+public class SyncshellConfig : IMareConfiguration
 {
-    public Dictionary<string, ServerNotesStorage> ServerNotes { get; set; } = new(StringComparer.Ordinal);
+    public Dictionary<string, ServerShellStorage> ServerShellStorage { get; set; } = new(StringComparer.Ordinal);
     public int Version { get; set; } = 0;
 }

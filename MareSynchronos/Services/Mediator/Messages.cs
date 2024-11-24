@@ -79,5 +79,7 @@ public record TargetPairMessage(Pair Pair) : MessageBase;
 public record CombatStartMessage : MessageBase;
 public record CombatEndMessage : MessageBase;
 
+public record UserChatMsgMessage(SignedChatMessage ChatMsg) : MessageBase;
+public record GroupChatMsgMessage(GroupDto GroupInfo, SignedChatMessage ChatMsg) : MessageBase;
 #pragma warning restore S2094
 #pragma warning restore MA0048 // File name must match type name

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using MareSynchronos.API.Data.Enum;
 using MareSynchronos.API.Dto;
+using MareSynchronos.API.Dto.Chat;
 using MareSynchronos.API.Dto.Group;
 using MareSynchronos.API.Dto.User;
 using MareSynchronos.Services.Mediator;
@@ -22,6 +23,13 @@ public partial class ApiController
     {
         Logger.LogTrace("Client_GroupChangePermissions: {perm}", groupPermission);
         ExecuteSafely(() => _pairManager.SetGroupPermissions(groupPermission));
+        return Task.CompletedTask;
+    }
+
+    public Task Client_GroupChatMsg(GroupChatMsgDto groupChatMsgDto)
+    {
+        Logger.LogDebug("Client_GroupChatMsg: {msg}", groupChatMsgDto.Message);
+        Mediator.Publish(new GroupChatMsgMessage(groupChatMsgDto.Group, groupChatMsgDto.Message));
         return Task.CompletedTask;
     }
 
@@ -120,6 +128,13 @@ public partial class ApiController
         return Task.CompletedTask;
     }
 
+    public Task Client_UserChatMsg(UserChatMsgDto chatMsgDto)
+    {
+        Logger.LogDebug("Client_UserChatMsg: {msg}", chatMsgDto.Message);
+        Mediator.Publish(new UserChatMsgMessage(chatMsgDto.Message));
+        return Task.CompletedTask;
+    }
+
     public Task Client_UserReceiveCharacterData(OnlineUserCharaDataDto dataDto)
     {
         Logger.LogTrace("Client_UserReceiveCharacterData: {user}", dataDto.User);
@@ -188,6 +203,12 @@ public partial class ApiController
         _mareHub!.On(nameof(Client_GroupChangePermissions), act);
     }
 
+    public void OnGroupChatMsg(Action<GroupChatMsgDto> act)
+    {
+        if (_initialized) return;
+        _mareHub!.On(nameof(Client_GroupChatMsg), act);
+    }
+
     public void OnGroupPairChangePermissions(Action<GroupPairUserPermissionDto> act)
     {
         if (_initialized) return;
@@ -246,6 +267,12 @@ public partial class ApiController
     {
         if (_initialized) return;
         _mareHub!.On(nameof(Client_UserAddClientPair), act);
+    }
+
+    public void OnUserChatMsg(Action<UserChatMsgDto> act)
+    {
+        if (_initialized) return;
+        _mareHub!.On(nameof(Client_UserChatMsg), act);
     }
 
     public void OnUserReceiveCharacterData(Action<OnlineUserCharaDataDto> act)

@@ -17,6 +17,9 @@ using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.UI.Components;
 using MareSynchronos.UI.Handlers;
 using Dalamud.Interface.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using MareSynchronos.Services;
+using MareSynchronos.MareConfiguration;
 
 namespace MareSynchronos.UI;
 
@@ -25,6 +28,8 @@ internal sealed class GroupPanel
     private readonly Dictionary<string, bool> _expandedGroupState = new(StringComparer.Ordinal);
     private readonly CompactUi _mainUi;
     private readonly PairManager _pairManager;
+    private readonly ChatService _chatService;
+    private readonly MareConfigService _mareConfig;
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private readonly Dictionary<string, bool> _showGidForEntry = new(StringComparer.Ordinal);
     private readonly UidDisplayHandler _uidDisplayHandler;
@@ -50,12 +55,15 @@ internal sealed class GroupPanel
     private string _syncShellPassword = string.Empty;
     private string _syncShellToJoin = string.Empty;
 
-    public GroupPanel(CompactUi mainUi, UiSharedService uiShared, PairManager pairManager, UidDisplayHandler uidDisplayHandler, ServerConfigurationManager serverConfigurationManager)
+    public GroupPanel(CompactUi mainUi, UiSharedService uiShared, PairManager pairManager, ChatService chatServivce,
+        UidDisplayHandler uidDisplayHandler, MareConfigService mareConfig, ServerConfigurationManager serverConfigurationManager)
     {
         _mainUi = mainUi;
         _uiShared = uiShared;
         _pairManager = pairManager;
+        _chatService = chatServivce;
         _uidDisplayHandler = uidDisplayHandler;
+        _mareConfig = mareConfig;
         _serverConfigurationManager = serverConfigurationManager;
     }
 
@@ -185,6 +193,8 @@ internal sealed class GroupPanel
 
     private void DrawSyncshell(GroupFullInfoDto groupDto, List<Pair> pairsInGroup)
     {
+        int shellNumber = _serverConfigurationManager.GetShellNumberForGid(groupDto.GID);
+
         var name = groupDto.Group.Alias ?? groupDto.GID;
         if (!_expandedGroupState.TryGetValue(groupDto.GID, out bool isExpanded))
         {
@@ -230,7 +240,13 @@ internal sealed class GroupPanel
 
         if (!string.Equals(_editGroupEntry, groupDto.GID, StringComparison.Ordinal))
         {
+            if (!_mareConfig.Current.DisableSyncshellChat)
+            {
+                ImGui.TextUnformatted($"[{shellNumber}]");
+                UiSharedService.AttachToolTip("Chat command prefix: /ss" + shellNumber);
+            }
             if (textIsGid) ImGui.PushFont(UiBuilder.MonoFont);
+            ImGui.SameLine();
             ImGui.TextUnformatted(groupName);
             if (textIsGid) ImGui.PopFont();
             UiSharedService.AttachToolTip("Left click to switch between GID display and comment" + Environment.NewLine +
@@ -252,6 +268,7 @@ internal sealed class GroupPanel
                 _serverConfigurationManager.SetNoteForGid(_editGroupEntry, _editGroupComment);
                 _editGroupComment = _serverConfigurationManager.GetNoteForGid(groupDto.GID) ?? string.Empty;
                 _editGroupEntry = groupDto.GID;
+                _chatService.MaybeUpdateShellName(shellNumber);
             }
         }
         else
@@ -262,6 +279,7 @@ internal sealed class GroupPanel
             {
                 _serverConfigurationManager.SetNoteForGid(groupDto.GID, _editGroupComment);
                 _editGroupEntry = string.Empty;
+                _chatService.MaybeUpdateShellName(shellNumber);
             }
 
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))

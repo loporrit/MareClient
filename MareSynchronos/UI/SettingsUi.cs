@@ -652,6 +652,18 @@ public class SettingsUi : WindowMediatorSubscriberBase
         UiSharedService.DrawHelpText("This will open a popup that allows you to set the notes for a user after successfully adding them to your individual pairs.");
 
         ImGui.Separator();
+        UiSharedService.FontText("Chat", _uiShared.UidFont);
+
+        var disableSyncshellChat = _configService.Current.DisableSyncshellChat;
+
+        if (ImGui.Checkbox("Disable Syncshell Chat", ref disableSyncshellChat))
+        {
+            _configService.Current.DisableSyncshellChat = disableSyncshellChat;
+            _configService.Save();
+        }
+        UiSharedService.DrawHelpText("Disable sending/receiving all syncshell chat messages.");
+
+        ImGui.Separator();
         UiSharedService.FontText("UI", _uiShared.UidFont);
         var showCharacterNames = _configService.Current.ShowCharacterNames;
         var showVisibleSeparate = _configService.Current.ShowVisibleUsersSeparately;
@@ -664,7 +676,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var enableDtrEntry = _configService.Current.EnableDtrEntry;
         var showUidInDtrTooltip = _configService.Current.ShowUidInDtrTooltip;
         var preferNoteInDtrTooltip = _configService.Current.PreferNoteInDtrTooltip;
-        var preferNotesInsteadOfName = _configService.Current.PreferNotesOverNamesForVisible;
 
         if (ImGui.Checkbox("Enable Game Right Click Menu Entries", ref enableRightClickMenu))
         {

@@ -33,6 +33,12 @@ public partial class ApiController
         await _mareHub!.SendAsync(nameof(UserAddPair), user).ConfigureAwait(false);
     }
 
+    public async Task UserChatSendMsg(UserDto user, ChatMessage message)
+    {
+        CheckConnection();
+        await _mareHub!.SendAsync(nameof(UserChatSendMsg), user, message).ConfigureAwait(false);
+    }
+
     public async Task UserDelete()
     {
         CheckConnection();
