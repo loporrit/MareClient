@@ -17,7 +17,6 @@ using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.UI.Components;
 using MareSynchronos.UI.Handlers;
 using Dalamud.Interface.Utility;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using MareSynchronos.Services;
 using MareSynchronos.MareConfiguration;
 
