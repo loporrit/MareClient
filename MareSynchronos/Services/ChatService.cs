@@ -68,19 +68,21 @@ public class ChatService : DisposableMediatorSubscriberBase
 
         var chatMsg = message.ChatMsg;
         var shellNumber = _serverConfigurationManager.GetShellNumberForGid(message.GroupInfo.GID);
-        var prefix = new SeStringBuilder();
 
+        var msg = new SeStringBuilder();
         // TODO: Configure colors and appearance
-        prefix.AddUiForeground(710);
-        prefix.AddText($"[SS{shellNumber}]<");
+        msg.AddUiForeground(710);
+        msg.AddText($"[SS{shellNumber}]<");
         // TODO: Don't link to the local player because it lets you do invalid things
-        prefix.Add(new PlayerPayload(chatMsg.SenderName, (uint)chatMsg.SenderHomeWorldId));
-        prefix.AddText("> ");
+        msg.Add(new PlayerPayload(chatMsg.SenderName, (uint)chatMsg.SenderHomeWorldId));
+        msg.AddText("> ");
+        msg.Append(SeString.Parse(message.ChatMsg.PayloadContent));
+        msg.AddUiForegroundOff();
 
         _chatGui.Print(new XivChatEntry{
-            MessageBytes = [..prefix.Build().Encode(), ..message.ChatMsg.PayloadContent],
+            Message = msg.Build(),
             Name = chatMsg.SenderName,
-            Type = XivChatType.Debug
+            Type = XivChatType.StandardEmote
         });
     }
 
