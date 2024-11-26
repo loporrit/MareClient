@@ -19,7 +19,6 @@ public sealed class CommandManagerService : IDisposable
     private const string _commandName2 = "/loporrit";
 
     private const string _ssCommandPrefix = "/ss";
-    private const int _ssCommandMaxNumber = 50;
 
     private readonly ApiController _apiController;
     private readonly ICommandManager _commandManager;
@@ -52,7 +51,7 @@ public sealed class CommandManagerService : IDisposable
         });
 
         // Lazy registration of all possible /ss# commands which tbf is what the game does for linkshells anyway
-        for (int i = 1; i <= _ssCommandMaxNumber; ++i)
+        for (int i = 1; i <= ChatService.CommandMaxNumber; ++i)
         {
             _commandManager.AddHandler($"{_ssCommandPrefix}{i}", new CommandInfo(OnChatCommand)
             {
@@ -66,7 +65,7 @@ public sealed class CommandManagerService : IDisposable
         _commandManager.RemoveHandler(_commandName);
         _commandManager.RemoveHandler(_commandName2);
 
-        for (int i = 1; i <= _ssCommandMaxNumber; ++i)
+        for (int i = 1; i <= ChatService.CommandMaxNumber; ++i)
             _commandManager.RemoveHandler($"{_ssCommandPrefix}{i}");
     }
 

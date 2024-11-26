@@ -56,4 +56,8 @@ public class MareConfig : IMareConfiguration
     public NotificationLocation WarningNotification { get; set; } = NotificationLocation.Both;
 
     public bool DisableSyncshellChat { get; set; } = false;
+    public int ChatColor { get; set; } = 0; // 0 means "use plugin default"
+    public int ChatLogKind { get; set; } = 1; // XivChatType.Debug
+    public bool ExtraChatAPI { get; set; } = false;
+    public bool ExtraChatTags { get; set; } = false;
 }

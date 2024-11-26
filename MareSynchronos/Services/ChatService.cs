@@ -5,9 +5,11 @@ using Dalamud.Plugin.Services;
 using MareSynchronos.API.Data;
 using MareSynchronos.Interop;
 using MareSynchronos.MareConfiguration;
+using MareSynchronos.MareConfiguration.Models;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
+using MareSynchronos.Utils;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +17,9 @@ namespace MareSynchronos.Services;
 
 public class ChatService : DisposableMediatorSubscriberBase
 {
+    public const int DefaultColor = 710;
+    public const int CommandMaxNumber = 50;
+
     private readonly ILogger<ChatService> _logger;
     private readonly IChatGui _chatGui;
     private readonly DalamudUtilService _dalamudUtil;
@@ -45,6 +50,7 @@ public class ChatService : DisposableMediatorSubscriberBase
 
     protected override void Dispose(bool disposing)
     {
+        base.Dispose(disposing);
         if (_gameChatHooks.IsValueCreated)
             _gameChatHooks.Value!.Dispose();
     }
@@ -61,28 +67,81 @@ public class ChatService : DisposableMediatorSubscriberBase
         });
     }
 
+    private ushort ResolveShellColor(int shellColor)
+    {
+        if (shellColor != 0)
+            return (ushort)shellColor;
+        var globalColor = _mareConfig.Current.ChatColor;
+        if (globalColor != 0)
+            return (ushort)globalColor;
+        return (ushort)DefaultColor;
+    }
+
+    private XivChatType ResolveShellLogKind(int shellLogKind)
+    {
+        if (shellLogKind != 0)
+            return (XivChatType)shellLogKind;
+        return (XivChatType)_mareConfig.Current.ChatLogKind;
+    }
+
     private void HandleGroupChat(GroupChatMsgMessage message)
     {
         if (_mareConfig.Current.DisableSyncshellChat)
             return;
 
         var chatMsg = message.ChatMsg;
-        var shellNumber = _serverConfigurationManager.GetShellNumberForGid(message.GroupInfo.GID);
+        var shellConfig = _serverConfigurationManager.GetShellConfigForGid(message.GroupInfo.GID);
+        var shellNumber = shellConfig.ShellNumber;
+
+        if (!shellConfig.Enabled)
+            return;
+
+        ushort color = ResolveShellColor(shellConfig.Color);
+        var extraChatTags = _mareConfig.Current.ExtraChatTags;
+        var logKind = ResolveShellLogKind(shellConfig.LogKind);
 
         var msg = new SeStringBuilder();
-        // TODO: Configure colors and appearance
-        msg.AddUiForeground(710);
+        if (extraChatTags)
+        {
+            msg.Add(ChatUtils.CreateExtraChatTagPayload(message.GroupInfo.GID));
+            msg.Add(RawPayload.LinkTerminator);
+        }
+        if (color != 0)
+            msg.AddUiForeground((ushort)color);
         msg.AddText($"[SS{shellNumber}]<");
         // TODO: Don't link to the local player because it lets you do invalid things
-        msg.Add(new PlayerPayload(chatMsg.SenderName, (uint)chatMsg.SenderHomeWorldId));
+        msg.Add(new PlayerPayload(chatMsg.SenderName, chatMsg.SenderHomeWorldId));
         msg.AddText("> ");
         msg.Append(SeString.Parse(message.ChatMsg.PayloadContent));
-        msg.AddUiForegroundOff();
+        if (color != 0)
+            msg.AddUiForegroundOff();
 
         _chatGui.Print(new XivChatEntry{
             Message = msg.Build(),
             Name = chatMsg.SenderName,
-            Type = XivChatType.StandardEmote
+            Type = logKind
+        });
+    }
+
+    // Print an example message to the configured global chat channel
+    public void PrintChannelExample(string message, string gid = "")
+    {
+        int chatType = _mareConfig.Current.ChatLogKind;
+
+        foreach (var group in _pairManager.Groups)
+        {
+            if (group.Key.GID == gid)
+            {
+                int shellChatType = _serverConfigurationManager.GetShellConfigForGid(gid).LogKind;
+                if (shellChatType != 0)
+                    chatType = shellChatType;
+            }
+        }
+
+        _chatGui.Print(new XivChatEntry{
+            Message = message,
+            Name = "",
+            Type = (XivChatType)chatType
         });
     }
 
@@ -94,7 +153,8 @@ public class ChatService : DisposableMediatorSubscriberBase
 
         foreach (var group in _pairManager.Groups)
         {
-            if (_serverConfigurationManager.GetShellNumberForGid(group.Key.GID) == shellNumber)
+            var shellConfig = _serverConfigurationManager.GetShellConfigForGid(group.Key.GID);
+            if (shellConfig.Enabled && shellConfig.ShellNumber == shellNumber)
             {
                 if (_gameChatHooks.IsValueCreated && _gameChatHooks.Value.ChatChannelOverride != null)
                 {
@@ -113,7 +173,8 @@ public class ChatService : DisposableMediatorSubscriberBase
 
         foreach (var group in _pairManager.Groups)
         {
-            if (_serverConfigurationManager.GetShellNumberForGid(group.Key.GID) == shellNumber)
+            var shellConfig = _serverConfigurationManager.GetShellConfigForGid(group.Key.GID);
+            if (shellConfig.Enabled && shellConfig.ShellNumber == shellNumber)
             {
                 var name = _serverConfigurationManager.GetNoteForGid(group.Key.GID) ?? group.Key.AliasOrGID;
                 // BUG: This doesn't always update the chat window e.g. when renaming a group
@@ -136,7 +197,8 @@ public class ChatService : DisposableMediatorSubscriberBase
 
         foreach (var group in _pairManager.Groups)
         {
-            if (_serverConfigurationManager.GetShellNumberForGid(group.Key.GID) == shellNumber)
+            var shellConfig = _serverConfigurationManager.GetShellConfigForGid(group.Key.GID);
+            if (shellConfig.Enabled && shellConfig.ShellNumber == shellNumber)
             {
                 Task.Run(async () => {
                     // TODO: Cache the name and home world instead of fetching it every time

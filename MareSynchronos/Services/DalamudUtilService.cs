@@ -70,6 +70,12 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
                 .Where(w => w.Name.ByteLength > 0 && w.DataCenter.RowId != 0 && (w.IsPublic || char.IsUpper((char)w.Name.Data.Span[0])))
                 .ToDictionary(w => (ushort)w.RowId, w => w.Name.ToString());
         });
+        UiColors = new(() =>
+        {
+            return gameData.GetExcelSheet<Lumina.Excel.Sheets.UIColor>(Dalamud.Game.ClientLanguage.English)!
+                .Where(x => x.RowId != 0 && !(x.RowId >= 500 && (x.UIForeground & 0xFFFFFF00) == 0))
+                .ToDictionary(x => (int)x.RowId);
+        });
         mediator.Subscribe<TargetPairMessage>(this, async (msg) =>
         {
             if (clientState.IsPvP) return;
@@ -99,6 +105,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public bool IsInCombat { get; private set; } = false;
 
     public Lazy<Dictionary<ushort, string>> WorldData { get; private set; }
+    public Lazy<Dictionary<int, Lumina.Excel.Sheets.UIColor>> UiColors { get; private set; }
 
     public MareMediator Mediator { get; }
 

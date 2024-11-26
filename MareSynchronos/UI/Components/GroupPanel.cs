@@ -239,7 +239,8 @@ internal sealed class GroupPanel
 
         if (!string.Equals(_editGroupEntry, groupDto.GID, StringComparison.Ordinal))
         {
-            if (!_mareConfig.Current.DisableSyncshellChat)
+            var shellConfig = _serverConfigurationManager.GetShellConfigForGid(groupDto.GID);
+            if (!_mareConfig.Current.DisableSyncshellChat && shellConfig.Enabled)
             {
                 ImGui.TextUnformatted($"[{shellNumber}]");
                 UiSharedService.AttachToolTip("Chat command prefix: /ss" + shellNumber);

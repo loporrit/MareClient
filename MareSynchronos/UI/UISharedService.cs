@@ -688,6 +688,51 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         return (T)_selectedComboItems[comboName];
     }
 
+    public T? DrawColorCombo<T>(string comboName, IEnumerable<T> comboItems, Func<T, (uint Color, string Name)> toEntry,
+        Action<T>? onSelected = null, T? initialSelectedItem = default)
+    {
+        if (!comboItems.Any()) return default;
+
+        if (!_selectedComboItems.TryGetValue(comboName, out var selectedItem) && selectedItem == null)
+        {
+            if (!EqualityComparer<T>.Default.Equals(initialSelectedItem, default))
+            {
+                selectedItem = initialSelectedItem;
+                _selectedComboItems[comboName] = selectedItem!;
+                if (!EqualityComparer<T>.Default.Equals(initialSelectedItem, default))
+                    onSelected?.Invoke(initialSelectedItem);
+            }
+            else
+            {
+                selectedItem = comboItems.First();
+                _selectedComboItems[comboName] = selectedItem!;
+            }
+        }
+
+        var entry = toEntry((T)selectedItem!);
+        ImGui.PushStyleColor(ImGuiCol.Text, ColorHelpers.RgbaUintToVector4(ColorHelpers.SwapEndianness(entry.Color)));
+        if (ImGui.BeginCombo(comboName, entry.Name))
+        {
+            foreach (var item in comboItems)
+            {
+                entry = toEntry(item);
+                ImGui.PushStyleColor(ImGuiCol.Text, ColorHelpers.RgbaUintToVector4(ColorHelpers.SwapEndianness(entry.Color)));
+                bool isSelected = EqualityComparer<T>.Default.Equals(item, (T)selectedItem);
+                if (ImGui.Selectable(entry.Name, isSelected))
+                {
+                    _selectedComboItems[comboName] = item!;
+                    onSelected?.Invoke(item!);
+                }
+                ImGui.PopStyleColor();
+            }
+
+            ImGui.EndCombo();
+        }
+        ImGui.PopStyleColor();
+
+        return (T)_selectedComboItems[comboName];
+    }
+
     public void DrawFileScanState()
     {
         ImGui.TextUnformatted("File Scanner Status");

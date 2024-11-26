@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Game.Text;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
@@ -38,11 +39,13 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private readonly MareConfigService _configService;
     private readonly ConcurrentDictionary<GameObjectHandler, Dictionary<string, FileDownloadStatus>> _currentDownloads = new();
     private readonly FileCompactor _fileCompactor;
+    private readonly DalamudUtilService _dalamudUtilService;
     private readonly FileUploadManager _fileTransferManager;
     private readonly FileTransferOrchestrator _fileTransferOrchestrator;
     private readonly FileCacheManager _fileCacheManager;
     private readonly MareCharaFileManager _mareCharaFileManager;
     private readonly PairManager _pairManager;
+    private readonly ChatService _chatService;
     private readonly PerformanceCollectorService _performanceCollector;
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private readonly UiSharedService _uiShared;
@@ -67,9 +70,10 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
     public SettingsUi(ILogger<SettingsUi> logger,
         UiSharedService uiShared, MareConfigService configService,
-        MareCharaFileManager mareCharaFileManager, PairManager pairManager,
+        MareCharaFileManager mareCharaFileManager, PairManager pairManager, ChatService chatService,
         ServerConfigurationManager serverConfigurationManager,
         MareMediator mediator, PerformanceCollectorService performanceCollector,
+        DalamudUtilService dalamudUtilService,
         FileUploadManager fileTransferManager,
         FileTransferOrchestrator fileTransferOrchestrator,
         FileCacheManager fileCacheManager,
@@ -78,8 +82,10 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _configService = configService;
         _mareCharaFileManager = mareCharaFileManager;
         _pairManager = pairManager;
+        _chatService = chatService;
         _serverConfigurationManager = serverConfigurationManager;
         _performanceCollector = performanceCollector;
+        _dalamudUtilService = dalamudUtilService;
         _fileTransferManager = fileTransferManager;
         _fileTransferOrchestrator = fileTransferOrchestrator;
         _fileCacheManager = fileCacheManager;
@@ -369,6 +375,233 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
     }
 
+    private static readonly List<(XivChatType, string)> _syncshellChatTypes = [
+        (0, "(use global setting)"),
+        (XivChatType.Debug, "Debug"),
+        (XivChatType.Echo, "Echo"),
+        (XivChatType.StandardEmote, "Standard Emote"),
+        (XivChatType.CustomEmote, "Custom Emote"),
+        (XivChatType.SystemMessage, "System Message"),
+        (XivChatType.SystemError, "System Error"),
+        (XivChatType.GatheringSystemMessage, "Gathering Message"),
+        (XivChatType.ErrorMessage, "Error message"),
+    ];
+
+    private void DrawChatConfig()
+    {
+        _lastTab = "Chat";
+
+        UiSharedService.FontText("Chat Settings", _uiShared.UidFont);
+
+        var disableSyncshellChat = _configService.Current.DisableSyncshellChat;
+
+        if (ImGui.Checkbox("Disable chat globally", ref disableSyncshellChat))
+        {
+            _configService.Current.DisableSyncshellChat = disableSyncshellChat;
+            _configService.Save();
+        }
+        UiSharedService.DrawHelpText("Global setting to disable chat for all syncshells.");
+
+        using var pushDisableGlobal = ImRaii.Disabled(disableSyncshellChat);
+
+        var uiColors = _dalamudUtilService.UiColors.Value;
+        int globalChatColor = _configService.Current.ChatColor;
+
+        if (globalChatColor != 0 && !uiColors.ContainsKey(globalChatColor))
+        {
+            globalChatColor = 0;
+            _configService.Current.ChatColor = 0;
+            _configService.Save();
+        }
+
+        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+        _uiShared.DrawColorCombo("Chat text color", Enumerable.Concat([0], uiColors.Keys),
+        i => i switch
+        {
+            0 => (uiColors[ChatService.DefaultColor].UIForeground, "Plugin Default"),
+            _ => (uiColors[i].UIForeground, $"[{i}] Sample Text")
+        },
+        i => {
+            _configService.Current.ChatColor = i;
+            _configService.Save();
+        }, globalChatColor);
+
+        int globalChatType = _configService.Current.ChatLogKind;
+        int globalChatTypeIdx = _syncshellChatTypes.FindIndex(x => globalChatType == (int)x.Item1);
+
+        if (globalChatTypeIdx == -1)
+            globalChatTypeIdx = 0;
+
+        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+        _uiShared.DrawCombo("Chat channel", Enumerable.Range(1, _syncshellChatTypes.Count - 1), i => $"{_syncshellChatTypes[i].Item2}",
+        i => {
+            if (_configService.Current.ChatLogKind == (int)_syncshellChatTypes[i].Item1)
+                return;
+            _configService.Current.ChatLogKind = (int)_syncshellChatTypes[i].Item1;
+            _chatService.PrintChannelExample($"Selected channel: {_syncshellChatTypes[i].Item2}");
+            _configService.Save();
+        }, globalChatTypeIdx);
+        UiSharedService.DrawHelpText("FFXIV chat channel to output chat messages on.");
+
+        ImGui.SetWindowFontScale(0.6f);
+        UiSharedService.FontText("\"Chat 2\" Plugin Integration", _uiShared.UidFont);
+        ImGui.SetWindowFontScale(1.0f);
+
+        // TODO: ExtraChat API impersonation
+        /*
+        var extraChatAPI = _configService.Current.ExtraChatAPI;
+        if (ImGui.Checkbox("ExtraChat replacement mode", ref extraChatAPI))
+        {
+            _configService.Current.ExtraChatAPI = extraChatAPI;
+            if (extraChatAPI)
+                _configService.Current.ExtraChatTags = true;
+            _configService.Save();
+        }
+        ImGui.EndDisabled();
+        UiSharedService.DrawHelpText("Enable ExtraChat APIs for full Chat 2 plugin integration.\n\nDo not enable this if ExtraChat is also installed and running.");
+        */
+
+        var extraChatTags = _configService.Current.ExtraChatTags;
+        if (ImGui.Checkbox("Tag messages as ExtraChat", ref extraChatTags))
+        {
+            _configService.Current.ExtraChatTags = extraChatTags;
+            if (!extraChatTags)
+                _configService.Current.ExtraChatAPI = false;
+            _configService.Save();
+        }
+        UiSharedService.DrawHelpText("If enabled, messages will be filtered under the category \"ExtraChat channels: All\".\n\nThis works even if ExtraChat is also installed and enabled.");
+
+        ImGui.Separator();
+
+        UiSharedService.FontText("Syncshell Settings", _uiShared.UidFont);
+
+        if (!ApiController.ServerAlive)
+        {
+            ImGui.Text("Connect to the server to configure individual syncshell settings.");
+            return;
+        }
+
+        foreach (var group in _pairManager.Groups.OrderBy(k => k.Key.GID))
+        {
+            var gid = group.Key.GID;
+            using var pushId = ImRaii.PushId(gid);
+
+            var shellConfig = _serverConfigurationManager.GetShellConfigForGid(gid);
+            var shellNumber = shellConfig.ShellNumber;
+            var shellEnabled = shellConfig.Enabled;
+            var shellName = _serverConfigurationManager.GetNoteForGid(gid) ?? group.Key.AliasOrGID;
+
+            if (shellEnabled)
+                shellName = $"[{shellNumber}] {shellName}";
+
+            ImGui.SetWindowFontScale(0.6f);
+            UiSharedService.FontText(shellName, _uiShared.UidFont);
+            ImGui.SetWindowFontScale(1.0f);
+
+            using var pushIndent = ImRaii.PushIndent();
+
+            if (ImGui.Checkbox($"Enable chat for this syncshell##{gid}", ref shellEnabled))
+            {
+                // If there is an active group with the same syncshell number, pick a new one
+                int nextNumber = 1;
+                bool conflict = false;
+                foreach (var otherGroup in _pairManager.Groups)
+                {
+                    if (gid == otherGroup.Key.GID) continue;
+                    var otherShellConfig = _serverConfigurationManager.GetShellConfigForGid(otherGroup.Key.GID);
+                    if (otherShellConfig.Enabled && otherShellConfig.ShellNumber == shellNumber)
+                        conflict = true;
+                    nextNumber = System.Math.Max(nextNumber, otherShellConfig.ShellNumber) + 1;
+                }
+                if (conflict)
+                    shellConfig.ShellNumber = nextNumber;
+                shellConfig.Enabled = shellEnabled;
+                _serverConfigurationManager.SaveShellConfigForGid(gid, shellConfig);
+            }
+
+            using var pushDisabled = ImRaii.Disabled(!shellEnabled);
+
+            ImGui.SetNextItemWidth(50 * ImGuiHelpers.GlobalScale);
+
+            var setSyncshellNumberFn = (int i) => {
+                // Find an active group with the same syncshell number as selected, and swap it
+                // This logic can leave duplicate IDs present in the config but its not critical
+                foreach (var otherGroup in _pairManager.Groups)
+                {
+                    if (gid == otherGroup.Key.GID) continue;
+                    var otherShellConfig = _serverConfigurationManager.GetShellConfigForGid(otherGroup.Key.GID);
+                    if (otherShellConfig.Enabled && otherShellConfig.ShellNumber == i)
+                    {
+                        otherShellConfig.ShellNumber = shellNumber;
+                        _serverConfigurationManager.SaveShellConfigForGid(otherGroup.Key.GID, otherShellConfig);
+                        break;
+                    }
+                }
+                shellConfig.ShellNumber = i;
+                _serverConfigurationManager.SaveShellConfigForGid(gid, shellConfig);
+            };
+
+            // _uiShared.DrawCombo() remembers the selected option -- we don't want that, because the value can change
+            if (ImGui.BeginCombo("Syncshell number##{gid}", $"{shellNumber}"))
+            {
+                // Same hard-coded number in CommandManagerService
+                for (int i = 1; i <= ChatService.CommandMaxNumber; ++i)
+                {
+                    if (ImGui.Selectable($"{i}", i == shellNumber))
+                    {
+                        // Find an active group with the same syncshell number as selected, and swap it
+                        // This logic can leave duplicate IDs present in the config but its not critical
+                        foreach (var otherGroup in _pairManager.Groups)
+                        {
+                            if (gid == otherGroup.Key.GID) continue;
+                            var otherShellConfig = _serverConfigurationManager.GetShellConfigForGid(otherGroup.Key.GID);
+                            if (otherShellConfig.Enabled && otherShellConfig.ShellNumber == i)
+                            {
+                                otherShellConfig.ShellNumber = shellNumber;
+                                _serverConfigurationManager.SaveShellConfigForGid(otherGroup.Key.GID, otherShellConfig);
+                                break;
+                            }
+                        }
+                        shellConfig.ShellNumber = i;
+                        _serverConfigurationManager.SaveShellConfigForGid(gid, shellConfig);
+                    }
+                }
+                ImGui.EndCombo();
+            }
+
+            if (shellConfig.Color != 0 && !uiColors.ContainsKey(shellConfig.Color))
+            {
+                shellConfig.Color = 0;
+                _serverConfigurationManager.SaveShellConfigForGid(gid, shellConfig);
+            }
+
+            ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+            _uiShared.DrawColorCombo($"Chat text color##{gid}", Enumerable.Concat([0], uiColors.Keys),
+            i => i switch
+            {
+                0 => (uiColors[globalChatColor > 0 ? globalChatColor : ChatService.DefaultColor].UIForeground, "(use global setting)"),
+                _ => (uiColors[i].UIForeground, $"[{i}] Sample Text")
+            },
+            i => {
+                shellConfig.Color = i;
+                _serverConfigurationManager.SaveShellConfigForGid(gid, shellConfig);
+            }, shellConfig.Color);
+
+            int shellChatTypeIdx = _syncshellChatTypes.FindIndex(x => shellConfig.LogKind == (int)x.Item1);
+
+            if (shellChatTypeIdx == -1)
+                shellChatTypeIdx = 0;
+
+            ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+            _uiShared.DrawCombo($"Chat channel##{gid}", Enumerable.Range(0, _syncshellChatTypes.Count), i => $"{_syncshellChatTypes[i].Item2}",
+            i => {
+                shellConfig.LogKind = (int)_syncshellChatTypes[i].Item1;
+                _serverConfigurationManager.SaveShellConfigForGid(gid, shellConfig);
+            }, shellChatTypeIdx);
+            UiSharedService.DrawHelpText("Override the FFXIV chat channel used for this syncshell.");
+        }
+    }
+
     private void DrawDebug()
     {
         _lastTab = "Debug";
@@ -650,18 +883,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Save();
         }
         UiSharedService.DrawHelpText("This will open a popup that allows you to set the notes for a user after successfully adding them to your individual pairs.");
-
-        ImGui.Separator();
-        UiSharedService.FontText("Chat", _uiShared.UidFont);
-
-        var disableSyncshellChat = _configService.Current.DisableSyncshellChat;
-
-        if (ImGui.Checkbox("Disable Syncshell Chat", ref disableSyncshellChat))
-        {
-            _configService.Current.DisableSyncshellChat = disableSyncshellChat;
-            _configService.Save();
-        }
-        UiSharedService.DrawHelpText("Disable sending/receiving all syncshell chat messages.");
 
         ImGui.Separator();
         UiSharedService.FontText("UI", _uiShared.UidFont);
@@ -1228,6 +1449,12 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 DrawServerConfiguration();
                 ImGui.EndTabItem();
                 ImGui.EndDisabled(); // _registrationInProgress
+            }
+
+            if (ImGui.BeginTabItem("Chat"))
+            {
+                DrawChatConfig();
+                ImGui.EndTabItem();
             }
 
             if (ImGui.BeginTabItem("Debug"))

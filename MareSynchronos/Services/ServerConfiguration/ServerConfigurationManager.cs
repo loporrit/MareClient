@@ -1,6 +1,7 @@
 ﻿using MareSynchronos.MareConfiguration;
 using MareSynchronos.MareConfiguration.Models;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.Utils;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -246,16 +247,27 @@ public class ServerConfigurationManager
         return CurrentServerTagStorage().ServerAvailablePairTags;
     }
 
-    internal int GetShellNumberForGid(string gid)
+    internal ShellConfig GetShellConfigForGid(string gid)
     {
         if (CurrentSyncshellStorage().GidShellConfig.TryGetValue(gid, out var config))
-        {
-            return config.ShellNumber;
-        }
+            return config;
 
-        int newNumber = CurrentSyncshellStorage().GidShellConfig.Count > 0 ? CurrentSyncshellStorage().GidShellConfig.Select(x => x.Value.ShellNumber).Max() + 1 : 1;
-        SetShellNumberForGid(gid, newNumber, false);
-        return newNumber;
+        // Pick the next higher syncshell number that is available
+        int newShellNumber = CurrentSyncshellStorage().GidShellConfig.Count > 0 ? CurrentSyncshellStorage().GidShellConfig.Select(x => x.Value.ShellNumber).Max() + 1 : 1;
+
+        var shellConfig = new ShellConfig{
+            ShellNumber = newShellNumber
+        };
+
+        // Save config to avoid auto-generated numbers shuffling around
+        SaveShellConfigForGid(gid, shellConfig);
+
+        return CurrentSyncshellStorage().GidShellConfig[gid];
+    }
+
+    internal int GetShellNumberForGid(string gid)
+    {
+        return GetShellConfigForGid(gid).ShellNumber;
     }
 
     internal Dictionary<string, List<string>> GetUidServerPairedUserTags()
@@ -359,23 +371,14 @@ public class ServerConfigurationManager
         _notesConfig.Save();
     }
 
-    internal void SetShellNumberForGid(string gid, int number, bool save = true)
+    internal void SaveShellConfigForGid(string gid, ShellConfig config)
     {
         if (string.IsNullOrEmpty(gid)) return;
 
-        if (CurrentSyncshellStorage().GidShellConfig.TryGetValue(gid, out var config))
-        {
-            config.ShellNumber = number;
-        }
-        else
-        {
-            CurrentSyncshellStorage().GidShellConfig.Add(gid, new(){
-                ShellNumber = number
-            });
-        }
+        // This is somewhat pointless because ShellConfig is a ref type we returned to the caller anyway...
+        CurrentSyncshellStorage().GidShellConfig[gid] = config;
 
-        if (save)
-            _syncshellConfig.Save();
+        _syncshellConfig.Save();
     }
 
     private ServerNotesStorage CurrentNotesStorage()
