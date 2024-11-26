@@ -79,26 +79,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private bool _shownGlamourerUnavailable = false;
     private bool _shownPenumbraUnavailable = false;
 
-    private bool _useLegacyGlamourer = false;
-
-    private readonly Glamourer.Api.IpcSubscribers.Legacy.ApiVersions _glamourerApiVersionLegacy;
-    private readonly ICallGateSubscriber<string, IGameObject?, uint, object>? _glamourerApplyAllLegacy;
-    private readonly ICallGateSubscriber<IGameObject?, string>? _glamourerGetAllCustomizationLegacy;
-    private readonly ICallGateSubscriber<ICharacter?, uint, object?> _glamourerRevertLegacy;
-    private readonly Glamourer.Api.IpcSubscribers.Legacy.RevertLock _glamourerRevertByNameLegacy;
-    private readonly Glamourer.Api.IpcSubscribers.Legacy.UnlockName _glamourerUnlockLegacy;
-    private readonly Glamourer.Api.Helpers.EventSubscriber<int, nint, Lazy<string>>? _glamourerStateChangedLegacy;
-
-    private bool _useLegacyPenumbraApi = false;
-
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.AddTemporaryMod _penumbraAddTemporaryModLegacy;
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.RemoveTemporaryMod _penumbraRemoveTemporaryModLegacy;
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.CreateNamedTemporaryCollection _penumbraCreateNamedTemporaryCollectionLegacy;
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.AssignTemporaryCollection _penumbraAssignTemporaryCollectionLegacy;
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.RemoveTemporaryCollectionByName _penumbraRemoveTemporaryCollectionLegacy;
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.RedrawObjectByIndex _penumbraRedrawLegacy;
-    private readonly Penumbra.Api.IpcSubscribers.Legacy.GetGameObjectResourcePaths _penumbraResourcePathsLegacy;
-
     public IpcManager(ILogger<IpcManager> logger, IDalamudPluginInterface pi, DalamudUtilService dalamudUtil, MareMediator mediator) : base(logger, mediator)
     {
         _pi = pi;
@@ -126,14 +106,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         _penumbraResourcePaths = new(pi);
         _penumbraApiVersion = new(pi);
 
-        _penumbraAddTemporaryModLegacy = new(pi);
-        _penumbraAssignTemporaryCollectionLegacy = new(pi);
-        _penumbraCreateNamedTemporaryCollectionLegacy = new(pi);
-        _penumbraRemoveTemporaryCollectionLegacy = new(pi);
-        _penumbraRedrawLegacy = new(pi);
-        _penumbraRemoveTemporaryModLegacy = new(pi);
-        _penumbraResourcePathsLegacy = new(pi);
-
         _penumbraGameObjectResourcePathResolved = Penumbra.Api.IpcSubscribers.GameObjectResourcePathResolved.Subscriber(pi, ResourceLoaded);
 
         _glamourerApiVersions = new(pi);
@@ -146,13 +118,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         _glamourerStateChanged = Glamourer.Api.IpcSubscribers.StateChanged.Subscriber(pi, GlamourerChanged);
         _glamourerStateChanged.Enable();
-
-        _glamourerApiVersionLegacy = new(pi);
-        _glamourerApplyAllLegacy = pi.GetIpcSubscriber<string, IGameObject?, uint, object>("Glamourer.ApplyAllToCharacterLock");
-        _glamourerGetAllCustomizationLegacy = pi.GetIpcSubscriber<IGameObject?, string>("Glamourer.GetAllCustomizationFromCharacter");
-        _glamourerRevertLegacy = pi.GetIpcSubscriber<ICharacter?, uint, object?>("Glamourer.RevertCharacterLock");
-        _glamourerRevertByNameLegacy = new(pi);
-        _glamourerUnlockLegacy = new(pi);
 
         _heelsGetApiVersion = pi.GetIpcSubscriber<(int, int)>("SimpleHeels.ApiVersion");
         _heelsGetOffset = pi.GetIpcSubscriber<string>("SimpleHeels.GetLocalPlayer");
@@ -200,16 +165,8 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             logger.LogWarning(ex, "Failed to check for some IPC, plugin not installed?");
         }
 
-        if (_useLegacyGlamourer)
-        {
-            _glamourerStateChangedLegacy = Glamourer.Api.IpcSubscribers.Legacy.StateChanged.Subscriber(pi, (t, a, c) => GlamourerChanged(a));
-            _glamourerStateChangedLegacy.Enable();
-        }
-        else
-        {
-            _glamourerStateChanged = StateChanged.Subscriber(pi, GlamourerChanged);
-            _glamourerStateChanged.Enable();
-        }
+        _glamourerStateChanged = StateChanged.Subscriber(pi, GlamourerChanged);
+        _glamourerStateChanged.Enable();
     }
 
     public bool Initialized => CheckPenumbraApiInternal() && CheckGlamourerApiInternal();
@@ -312,14 +269,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
                 try
                 {
                     logger.LogDebug("[{appid}] Calling on IPC: GlamourerApplyAll", applicationId);
-                    if (_useLegacyGlamourer)
-                    {
-                        _glamourerApplyAllLegacy.InvokeAction(customization, chara, LockCode);
-                    }
-                    else
-                    {
-                        _glamourerApplyAll!.Invoke(customization, chara.ObjectIndex, LockCode);
-                    }
+                    _glamourerApplyAll!.Invoke(customization, chara.ObjectIndex, LockCode);
                 }
                 catch (Exception ex)
                 {
@@ -343,10 +293,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
                 var gameObj = _dalamudUtil.CreateGameObject(character);
                 if (gameObj is ICharacter c)
                 {
-                    if (_useLegacyGlamourer)
-                        return _glamourerGetAllCustomizationLegacy.InvokeFunc(c) ?? string.Empty;
-                    else
-                        return _glamourerGetAllCustomization!.Invoke(c.ObjectIndex).Item2 ?? string.Empty;
+                    return _glamourerGetAllCustomization!.Invoke(c.ObjectIndex).Item2 ?? string.Empty;
                 }
                 return string.Empty;
             }).ConfigureAwait(false);
@@ -367,26 +314,12 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             {
                 try
                 {
-                    if (_useLegacyGlamourer)
-                    {
-                        logger.LogDebug("[{appid}] Calling On IPC: GlamourerUnlockName", applicationId);
-                        _glamourerUnlockLegacy.Invoke(name, LockCode);
-                        logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevert", applicationId);
-                        _glamourerRevertLegacy.InvokeAction(chara, LockCode);
-                        logger.LogDebug("[{appid}] Calling On IPC: PenumbraRedraw", applicationId);
-                    }
-                    else
-                    {
-                        logger.LogDebug("[{appid}] Calling On IPC: GlamourerUnlockName", applicationId);
-                        _glamourerUnlock.Invoke(chara.ObjectIndex, LockCode);
-                        logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevert", applicationId);
-                        _glamourerRevert.Invoke(chara.ObjectIndex, LockCode);
-                        logger.LogDebug("[{appid}] Calling On IPC: PenumbraRedraw", applicationId);
-                    }
-                    if (_useLegacyPenumbraApi)
-                        _penumbraRedrawLegacy.Invoke(chara.ObjectIndex, RedrawType.AfterGPose);
-                    else
-                        _penumbraRedraw.Invoke(chara.ObjectIndex, RedrawType.AfterGPose);
+                    logger.LogDebug("[{appid}] Calling On IPC: GlamourerUnlockName", applicationId);
+                    _glamourerUnlock.Invoke(chara.ObjectIndex, LockCode);
+                    logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevert", applicationId);
+                    _glamourerRevert.Invoke(chara.ObjectIndex, LockCode);
+                    logger.LogDebug("[{appid}] Calling On IPC: PenumbraRedraw", applicationId);
+                    _penumbraRedraw.Invoke(chara.ObjectIndex, RedrawType.AfterGPose);
                 }
                 catch (Exception ex)
                 {
@@ -415,20 +348,10 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         if ((!CheckGlamourerApi()) || _dalamudUtil.IsZoning) return;
         try
         {
-            if (_useLegacyGlamourer)
-            {
-                logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevertByName", applicationId);
-                _glamourerRevertByNameLegacy.Invoke(name, LockCode);
-                logger.LogDebug("[{appid}] Calling On IPC: GlamourerUnlockName", applicationId);
-                _glamourerUnlockLegacy.Invoke(name, LockCode);
-            }
-            else
-            {
-                logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevertByName", applicationId);
-                _glamourerRevertByName.Invoke(name, LockCode);
-                logger.LogDebug("[{appid}] Calling On IPC: GlamourerUnlockName", applicationId);
-                _glamourerUnlockByName.Invoke(name, LockCode);
-            }
+            logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevertByName", applicationId);
+            _glamourerRevertByName.Invoke(name, LockCode);
+            logger.LogDebug("[{appid}] Calling On IPC: GlamourerUnlockName", applicationId);
+            _glamourerUnlockByName.Invoke(name, LockCode);
         }
         catch (Exception ex)
         {
@@ -520,9 +443,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         await _dalamudUtil.RunOnFrameworkThread(() =>
         {
-            var retAssign = _useLegacyPenumbraApi
-                ? _penumbraAssignTemporaryCollectionLegacy.Invoke(collName.ToString(), idx, force: true)
-                : _penumbraAssignTemporaryCollection.Invoke(collName, idx, forceAssignment: true);
+            var retAssign = _penumbraAssignTemporaryCollection.Invoke(collName, idx, forceAssignment: true);
             logger.LogTrace("Assigning Temp Collection {collName} to index {idx}, Success: {ret}", collName, idx, retAssign);
             return collName;
         }).ConfigureAwait(false);
@@ -564,10 +485,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         await _dalamudUtil.RunOnFrameworkThread(async () =>
         {
             var gameObject = await _dalamudUtil.CreateGameObjectAsync(await _dalamudUtil.GetPlayerPointerAsync().ConfigureAwait(false)).ConfigureAwait(false);
-            if (_useLegacyPenumbraApi)
-                _penumbraRedrawLegacy.Invoke(gameObject!.ObjectIndex, RedrawType.AfterGPose);
-            else
-                _penumbraRedraw.Invoke(gameObject!.ObjectIndex, RedrawType.Redraw);
+            _penumbraRedraw.Invoke(gameObject!.ObjectIndex, RedrawType.Redraw);
         }).ConfigureAwait(false);
     }
 
@@ -577,20 +495,10 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
         return await _dalamudUtil.RunOnFrameworkThread(() =>
         {
-            if (!_useLegacyPenumbraApi)
-            {
-                var collName = "Loporrit_" + uid;
-                var collId = _penumbraCreateNamedTemporaryCollection.Invoke(collName);
-                logger.LogTrace("Creating Temp Collection {collName}, GUID: {collId}", collName, collId);
-                return collId;
-            }
-            else
-            {
-                var collid = Guid.NewGuid();
-                _penumbraCreateNamedTemporaryCollectionLegacy.Invoke(collid.ToString());
-                logger.LogTrace("Creating Temp Collection {collName}", collid);
-                return collid;
-            }
+            var collName = "Loporrit_" + uid;
+            var collId = _penumbraCreateNamedTemporaryCollection.Invoke(collName);
+            logger.LogTrace("Creating Temp Collection {collName}, GUID: {collId}", collName, collId);
+            return collId;
         }).ConfigureAwait(false);
     }
 
@@ -603,16 +511,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             logger.LogTrace("Calling On IPC: Penumbra.GetGameObjectResourcePaths");
             var idx = handler.GetGameObject()?.ObjectIndex;
             if (idx == null) return null;
-            if (_useLegacyPenumbraApi)
-            {
-                IReadOnlyDictionary<string, string[]>?[] ret = _penumbraResourcePathsLegacy.Invoke(idx.Value);
-                if (!ret.Any()) return null;
-                return ret[0]!.ToDictionary(r => r.Key, r => new HashSet<string>(r.Value));
-            }
-            else
-            {
-                return _penumbraResourcePaths.Invoke(idx.Value)[0];
-            }
+            return _penumbraResourcePaths.Invoke(idx.Value)[0];
         }).ConfigureAwait(false);
     }
 
@@ -631,10 +530,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             await PenumbraRedrawInternalAsync(logger, handler, applicationId, (chara) =>
             {
                 logger.LogDebug("[{appid}] Calling on IPC: PenumbraRedraw", applicationId);
-            if (_useLegacyPenumbraApi)
-                _penumbraRedrawLegacy.Invoke(chara.ObjectIndex, RedrawType.AfterGPose);
-            else
-                _penumbraRedraw.Invoke(chara.ObjectIndex, RedrawType.Redraw);
+            _penumbraRedraw.Invoke(chara.ObjectIndex, RedrawType.Redraw);
             }).ConfigureAwait(false);
         }
         finally
@@ -649,9 +545,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             logger.LogTrace("[{applicationId}] Removing temp collection for {collId}", applicationId, collId);
-            var ret2 = _useLegacyPenumbraApi
-                ? _penumbraRemoveTemporaryCollectionLegacy.Invoke(collId.ToString())
-                : _penumbraRemoveTemporaryCollection.Invoke(collId);
+            var ret2 = _penumbraRemoveTemporaryCollection.Invoke(collId);
             logger.LogTrace("[{applicationId}] RemoveTemporaryCollection: {ret2}", applicationId, ret2);
         }).ConfigureAwait(false);
     }
@@ -668,9 +562,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             logger.LogTrace("[{applicationId}] Manip: {data}", applicationId, manipulationData);
-            var retAdd = _useLegacyPenumbraApi
-                ? _penumbraAddTemporaryModLegacy.Invoke("MareChara_Meta", collId.ToString(), [], manipulationData, 0)
-                : _penumbraAddTemporaryMod.Invoke("MareChara_Meta", collId, [], manipulationData, 0);
+            var retAdd = _penumbraAddTemporaryMod.Invoke("MareChara_Meta", collId, [], manipulationData, 0);
             logger.LogTrace("[{applicationId}] Setting temp meta mod for {collId}, Success: {ret}", applicationId, collId, retAdd);
         }).ConfigureAwait(false);
     }
@@ -685,13 +577,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             {
                 logger.LogTrace("[{applicationId}] Change: {from} => {to}", applicationId, mod.Key, mod.Value);
             }
-            var retRemove = _useLegacyPenumbraApi
-                ? _penumbraRemoveTemporaryModLegacy.Invoke("MareChara_Files", collId.ToString(), 0)
-                : _penumbraRemoveTemporaryMod.Invoke("MareChara_Files", collId, 0);
+            var retRemove = _penumbraRemoveTemporaryMod.Invoke("MareChara_Files", collId, 0);
             logger.LogTrace("[{applicationId}] Removing temp files mod for {collId}, Success: {ret}", applicationId, collId, retRemove);
-            var retAdd = _useLegacyPenumbraApi
-                ? _penumbraAddTemporaryModLegacy.Invoke("MareChara_Files", collId.ToString(), modPaths, string.Empty, 0)
-                : _penumbraAddTemporaryMod.Invoke("MareChara_Files", collId, modPaths, string.Empty, 0);
+            var retAdd = _penumbraAddTemporaryMod.Invoke("MareChara_Files", collId, modPaths, string.Empty, 0);
             logger.LogTrace("[{applicationId}] Setting temp files mod for {collId}, Success: {ret}", applicationId, collId, retAdd);
         }).ConfigureAwait(false);
     }
@@ -703,7 +591,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         _disposalCts.Cancel();
 
         _glamourerStateChanged?.Dispose();
-        _glamourerStateChangedLegacy?.Dispose();
         _penumbraModSettingChanged.Dispose();
         _penumbraGameObjectResourcePathResolved.Dispose();
         _penumbraDispose.Dispose();
@@ -748,12 +635,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             }
             catch
             {
-                var version = _glamourerApiVersionLegacy.Invoke();
-                if (version is { Major: 0, Minor: >= 1 } && versionValid)
-                {
-                    apiAvailable = true;
-                    _useLegacyGlamourer = true;
-                }
+
             }
             _shownGlamourerUnavailable = _shownGlamourerUnavailable && !apiAvailable;
 
@@ -808,11 +690,10 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             try
             {
                 _ = _penumbraApiVersion.Invoke();
-                _useLegacyPenumbraApi = false;
             }
             catch
             {
-                _useLegacyPenumbraApi = true;
+
             }
             penumbraAvailable = pluginFound && _penumbraEnabled.Invoke();
             _shownPenumbraUnavailable = _shownPenumbraUnavailable && !penumbraAvailable;
@@ -884,10 +765,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         PenumbraModDirectory = _penumbraResolveModDir.Invoke();
         _penumbraAvailable = true;
         Mediator.Publish(new PenumbraInitializedMessage());
-        if (_useLegacyPenumbraApi)
-            _penumbraRedrawLegacy.Invoke(0, RedrawType.Redraw);
-        else
-            _penumbraRedraw!.Invoke(0, RedrawType.Redraw);
+        _penumbraRedraw!.Invoke(0, RedrawType.Redraw);
     }
 
     private async Task PenumbraRedrawInternalAsync(ILogger logger, GameObjectHandler handler, Guid applicationId, Action<ICharacter> action)
